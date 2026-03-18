@@ -1792,9 +1792,7 @@
     "price_category": "very_low",
     "recommended_for": ["retro_pc", "collector"],
     "price_rub": 300
-  }
-]
-[
+  },
   {
     "id": "amd_ryzen_5_5500",
     "brand": "AMD",
@@ -2737,9 +2735,7 @@
     "price_category": "mid",
     "recommended_for": ["gaming", "office"],
     "price_rub": 12500
-  }
-]
-[
+  },
   {
     "id": "amd_epyc_9754",
     "brand": "AMD",
