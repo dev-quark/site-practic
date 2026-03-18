@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body{
+            margin: 0;
+        }
+        .head{
+            margin: 0;
+            background-color: black;
+            
+            height: 10vh;
+        }
+        .list_open{
+            background-color: black;
+            display: inline-block;
+            height: 100vh
+        }
+        .list_open a{
+            color: white;
+            margin-right: 10%;
+            font-size: 20px;
+            
+        }
+        .open_close{
+            font-size: 40px;
+            display: inline-block;
+        }
+        .panel_open{
+            display: inline-block;
+        }
+        .panel_open a{
+            color: white;
+            margin-left: 10vh;
+        }
+        .user{
+            position: fixed;
+            display: inline-block;
+            right: 10%;
+            margin-top: 3.5VH;
+        }
+        .user a{
+            color: white;
+            
+        }
+    </style>
+</head>
+<body>
+    <diva class="conteiner">
+    <div class="head">
+        <button class="open_close" onclick="open_close">=</button>
+        <div class="panel_open">
+            <a href="/panel.html">Панель управления</a>
+        </div>
+        <div class="user">
+            <a href="registation.html" class="user_reg">Зарегестрироваться</a>
+            <a href="rlogin.html" class="user_login">Войти</a>
+        </div>
+    </div>
+    <div class="list_open">
+        <li>
+            <ol><a href="index.html" ">Главная</a></ol>
+            <ol><a href="about.html">О нас</a></ol>
+            <ol><a href="assembly.html">Каталог сборок</a></ol>
+            <ol><a href="components.html">Каталог комплектующих</a></ol>
+            <ol><a href="collection.html">Сборник для начинающих сборщиков</a></ol>
+            <ol><a href="glossary.html">Глоссарий</a></ol>
+            <ol><a href="po.html">Список ПО</a></ol>
+            <ol><a href="contacts.html">Контакты</a></ol>
+            <ol><a href="community.html">Сообщество</a></ol>
+        </li>
+    </div>
+    
+    </div>
+</body>
+</html>
