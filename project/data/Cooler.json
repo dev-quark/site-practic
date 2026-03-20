@@ -287,7 +287,7 @@
     "cold_plate_material": "Nickel-plated Copper + Sapphire Glass",
     "fan_lighting_type": "Dual-Mode RGB Aura Sync",
     "rgb_sync": ["ASUS Aura Sync", "NVIDIA G-SYNC"],
-    "oled_display": "OLED 3.49" Display with Live Monitoring",
+    "oled_display": ["OLED 3.49" , "Display with Live Monitoring"],
     "included_spacer_kit": true,
     "installation_tool_included": true,
     "liquid_type": "Premixed Dielectric Fluid",
@@ -799,9 +799,7 @@
     "recommended_for": ["gaming", "sunway_brand", "value_build"],
     "price_category": "mid",
     "price_rub": 12500
-  }
-]
-[
+  },
   {
     "id": "cooler_kingston_fury_kf-ccl240am5",
     "brand": "Kingston FURY",
@@ -1482,9 +1480,7 @@
     "recommended_for": ["phantom_theme", "amd_optimized", "blue_rgb_preference"],
     "price_category": "mid_high",
     "price_rub": 19500
-  }
-]
-[
+  },
   {
     "id": "cooler_kingston_fury_kf-ccl240am5",
     "brand": "Kingston FURY",
