@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Builder Site</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Чтобы не было скролла у body */
+        }
+
+        /* --- Шапка (фиксирована сверху) --- */
+        .head {
+            background-color: black;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0; /* Шапка не сжимается */
+            z-index: 1000;
+        }
+
+        .open_close {
+            font-size: 30px;
+            color: white;
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin-right: 20px;
+        }
+
+        .panel_open a, .user a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        /* --- Основной контейнер (Меню + Контент) --- */
+        .main-wrapper {
+            display: flex;
+            flex: 1; /* Занимает всё оставшееся место по высоте */
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- Список (Боковая панель) --- */
+        .list_open {
+            background-color: #1a1a1a;
+            width: 0; /* Изначально ширина 0 (скрыто) */
+            overflow: hidden; /* Скрываем содержимое при ширине 0 */
+            transition: width 0.3s ease; /* Плавное изменение ширины */
+            white-space: nowrap; /* Текст не переносится, пока меню узкое */
+            flex-shrink: 0;
+        }
+
+        /* Класс для открытого меню */
+        .list_open.active {
+            width: 300px; /* Ширина открытого меню */
+            overflow-y: auto; /* Появляется скролл внутри меню если нужно */
+        }
+
+        .list_open ul {
+            list-style: none;
+            padding: 20px 0;
+            margin: 0;
+            width: 300px; /* Фиксируем ширину списка внутри, чтобы текст не прыгал */
+        }
+
+        .list_open li {
+            padding: 15px 25px;
+            border-bottom: 1px solid #333;
+        }
+
+        .list_open a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            display: block;
+        }
+
+        .list_open a:hover {
+            background-color: #333;
+        }
+
+        /* --- Область контента --- */
+        .content {
+            flex: 1; /* Занимает всё оставшееся место */
+            padding: 20px;
+            overflow-y: auto; /* Скролл только у контента */
+            background-color: #f4f4f4;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Шапка -->
+    <div class="head">
+        <div style="display: flex; align-items: center;">
+            <button class="open_close" id="menuBtn" onclick="toggleMenu()">☰</button>
+            <div class="panel_open">
+                <a href="/panel.html">Панель управления</a>
+            </div>
+        </div>
+        <div class="user">
+            <a href="registration.html">Зарегистрироваться</a>
+            <a href="login.html">Войти</a>
+        </div>
+    </div>
+
+    <!-- Общий контейнер для Меню и Контента -->
+    <div class="main-wrapper">
+        
+        <!-- Список (Меню) -->
+        <div class="list_open" id="sideMenu">
+            <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="about.html">О нас</a></li>
+                <li><a href="assembly.html">Каталог сборок</a></li>
+                <li><a href="components.html">Каталог комплектующих</a></li>
+                <li><a href="collection.html">Для начинающих</a></li>
+                <li><a href="glossary.html">Глоссарий</a></li>
+                <li><a href="po.html">Список ПО</a></li>
+                <li><a href="contacts.html">Контакты</a></li>
+                <li><a href="community.html">Сообщество</a></li>
+            </ul>
+        </div>
+
+        <!-- Контент -->
+        <div class="content">
+            <h1>Добро пожаловать!</h1>
+            <p>Этот блок контента автоматически подстраивается под ширину меню.</p>
+            <p>Попробуйте нажать на кнопку меню слева сверху.</p>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            <br>
+            <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        </div>
+
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('sideMenu');
+            const btn = document.getElementById('menuBtn');
+
+            // Переключаем класс active у меню
+            // Это изменит его ширину с 0px на 300px
+            menu.classList.toggle('active');
+
+            // Меняем иконку
+            if (menu.classList.contains('active')) {
+                btn.innerHTML = "✕"; 
+            } else {
+                btn.innerHTML = "☰"; 
+            }
+        }
+    </script>
+</body>
+</html>
