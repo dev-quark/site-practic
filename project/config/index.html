@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ПК Конфигуратор 2026 | Умная сборка</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    
+    <!-- Мобильная шапка (видна только на маленьких экранах) -->
+    <div class="mobile-header">
+        <button id="openSidebar" class="menu-toggle">
+            <span>☰ Фильтры</span>
+        </button>
+        <span class="mobile-title">Конфигуратор ПК</span>
+        <div class="mobile-total" id="mobileTotalPrice">0 ₽</div>
+    </div>
+
+    <div class="app-container">
+        
+        <!-- SIDEBAR (Фильтры и Навигация) -->
+        <aside id="filterSidebar" class="sidebar">
+            <!-- Контент генерируется через JS (renderSidebar) -->
+            <!-- Сюда вставятся: Лого, Навигация по категориям, Панели фильтров, Итого -->
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header class="header">
+                <div class="header-title">
+                    <h2>🖥️ Конфигурация системы</h2>
+                    <p class="subtitle">Подберите совместимые компоненты</p>
+                </div>
+                <div class="header-actions">
+                    <button class="reset-btn" id="resetBuild">↺ Сбросить всё</button>
+                </div>
+            </header>
+
+            <!-- Блок быстрой информации (опционально, дублирует сайдбар на больших экранах) -->
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="label">Статус:</span>
+                    <span id="compatibilityStatus" class="value">⏳ Ожидание...</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">Бюджет:</span>
+                    <span id="totalPrice" class="value highlight">0 ₽</span>
+                </div>
+            </div>
+
+            <div class="components-grid">
+                <!-- CPU -->
+                <section id="cpu" class="component-section">
+                    <h3 id="cpuHeader" data-section-header="cpu">🧠 Процессор</h3>
+                    <div class="component-list" id="cpuList">
+                        <div class="loading">Загрузка...</div>
+                    </div>
+                </section>
+                
+                <!-- Motherboard -->
+                <section id="motherboard" class="component-section">
+                    <h3 id="motherboardHeader" data-section-header="motherboard">📱 Материнская плата</h3>
+                    <div class="component-list" id="motherboardList">
+                        <div class="loading">Загрузка...</div>
+                    </div>
+                </section>
+                
+                <!-- RAM -->
+                <section id="ram" class="component-section">
+                    <h3 id="ramHeader" data-section-header="ram">💾 Оперативная память</h3>
+                    <div class="component-list" id="ramList">
+                        <div class="loading">Загрузка...</div>
+                    </div>
+                </section>
+                
+                <!-- GPU -->
+                <section id="gpu" class="component-section">
+                    <h3 id="gpuHeader" data-section-header="gpu">🎮 Видеокарта</h3>
+                    <div class="component-list" id="gpuList">
+                        <div class="loading">Загрузка...</div>
+                    </div>
+                </section>
+                
+                <!-- Storage -->
+                <section id="storage" class="component-section">
+                    <h3 id="storageHeader" data-section-header="storage">💿 Накопители</h3>
+                    <div class="component-list" id="storageList">
+                        <div class="loading">Загрузка...</div>
+                    </div>
+                </section>
+                
+                <!-- Cooler -->
+                <section id="cooler" class="component-section">
+                    <h3 id="coolerHeader" data-section-header="cooler">❄️ Охлаждение</h3>
+                    <div class="component-list" id="coolerList">
+                        <div class="loading">Загрузка...</div>
+                    </div>
+                </section>
+                
+                <!-- PSU (ID должен совпадать с js: psua) -->
+                <section id="psua" class="component-section">
+                    <h3 id="psuaHeader" data-section-header="psua">⚡ Блок питания</h3>
+                    <div class="component-list" id="psuaList">
+                        <div class="loading">Загрузка...</div>
+                    </div>
+                </section>
+                
+                <!-- Case -->
+                <section id="case" class="component-section">
+                    <h3 id="caseHeader" data-section-header="case">🖥️ Корпус</h3>
+                    <div class="component-list" id="caseList">
+                        <div class="loading">Загрузка...</div>
+                    </div>
+                </section>
+            </div>
+            
+            <!-- COMPATIBILITY REPORT -->
+            <section class="report-section">
+                <h3>📊 Детальный отчет о совместимости</h3>
+                <div class="compatibility-report" id="compatibilityReport">
+                    <div class="report-details" id="reportDetails">
+                        <p class="empty-state">Выберите компоненты для проверки</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- BUILT SYSTEM SUMMARY -->
+            <section class="summary-section">
+                <h3>🛠️ Ваша сборка</h3>
+                <div class="built-system" id="builtSystem">
+                    <ul class="build-list" id="buildList">
+                        <li class="empty-state">Нет выбранных компонентов</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- MODAL FOR COMPONENT DETAILS (Опционально) -->
+    <div class="modal" id="componentModal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModal">&times;</span>
+            <h3 id="modalTitle">Компонент</h3>
+            <div id="modalBody"></div>
+            <button class="modal-action-btn" id="modalAddBtn">Добавить в сборку</button>
+        </div>
+    </div>
+    
+    <script src="js/loader.js"></script>
+    <script src="js/validator.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
