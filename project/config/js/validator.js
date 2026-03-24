@@ -3,9 +3,7 @@ class CompatibilityValidator {
         this.dbData = dbData || {};
         this.categories = ['motherboard', 'cpu', 'ram', 'gpu', 'storage', 'cooler', 'psua', 'case'];
         
-        // 🎯 Карта совместимости сокетов (для обратной совместимости)
         this.socketCompatibility = {
-            // Intel
             'LGA1700': ['LGA1700'],
             'LGA1200': ['LGA1200'],
             'LGA1151': ['LGA1151', 'LGA1151-v2'],
@@ -14,8 +12,6 @@ class CompatibilityValidator {
             'LGA2066': ['LGA2066'],
             'LGA2011-3': ['LGA2011-3', 'LGA2011'],
             'LGA2011': ['LGA2011-3', 'LGA2011'],
-            
-            // AMD
             'AM5': ['AM5'],
             'AM4': ['AM4', 'AM4-TR'],
             'AM4-TR': ['AM4', 'AM4-TR'],
@@ -24,8 +20,6 @@ class CompatibilityValidator {
             'TR4': ['TR4', 'sTRX4'],
             'sTRX4': ['TR4', 'sTRX4'],
             'sWRX8': ['sWRX8'],
-            
-            // Server/Other
             'SP3': ['SP3'],
             'SP5': ['SP5'],
         };
@@ -134,7 +128,6 @@ class CompatibilityValidator {
         };
     }
 
-    // 🔍 Проверка: совместимы ли два сокета
     areSocketsCompatible(socket1, socket2) {
         if (!socket1 || !socket2) return false;
         if (socket1 === socket2) return true;
@@ -145,7 +138,6 @@ class CompatibilityValidator {
         return compat1.includes(socket2) || compat2.includes(socket1);
     }
 
-    // 🔍 Получение сокета из компонента (универсальный метод)
     getSocket(item) {
         return item?.socket_type || item?.socket || item?.cpu_socket || null;
     }
@@ -156,7 +148,6 @@ class CompatibilityValidator {
         
         const cpuSocket = this.getSocket(item);
         
-        // === CPU ↔ Motherboard (сокет) ===
         if (mb) {
             const mbSocket = this.getSocket(mb);
             
@@ -164,26 +155,19 @@ class CompatibilityValidator {
                 if (!this.areSocketsCompatible(cpuSocket, mbSocket)) {
                     errors.push(`${prefix}❌ Несовместимый сокет: ${cpuSocket} ≠ ${mbSocket}`);
                 }
-            } else if (cpuSocket && !mbSocket) {
-                warnings.push(`${prefix}⚠️ У материнской платы не указан сокет`);
-            } else if (!cpuSocket && mbSocket) {
-                warnings.push(`${prefix}⚠️ У процессора не указан сокет`);
             }
             
-            // Чипсет и поколение
             if (item.generation && mb.supported_cpu_gens) {
                 if (!mb.supported_cpu_gens.includes(item.generation)) {
                     warnings.push(`${prefix}⚠️ Поколение ${item.generation} может требовать обновления BIOS`);
                 }
             }
             
-            // TDP и VRM
             if (item.tdp_watts && mb.vrm_tdp_limit && item.tdp_watts > mb.vrm_tdp_limit) {
                 warnings.push(`${prefix}⚠️ TDP ${item.tdp_watts}W может перегрузить VRM`);
             }
         }
         
-        // === CPU ↔ Cooler (сокет + TDP) ===
         if (cooler) {
             const coolerSockets = cooler.supported_sockets || [this.getSocket(cooler)];
             const coolerTdp = cooler.max_tdp_watts || cooler.tdp_limit;
@@ -204,6 +188,7 @@ class CompatibilityValidator {
     validateMotherboard(item, selection, errors, warnings, prefix = '') {
         const cpu = selection['cpu'];
         const ram = selection['ram'];
+        const storage = selection['storage'];
         const case_ = selection['case'];
         
         const mbSocket = this.getSocket(item);
@@ -220,18 +205,19 @@ class CompatibilityValidator {
                     }
                 }
             });
-            
-            // Проверка чипсета
-            if (item.chipset && cpu.chipset_support) {
-                if (!cpu.chipset_support.includes(item.chipset)) {
-                    warnings.push(`${prefix}⚠️ Чипсет ${item.chipset} может иметь ограничения`);
-                }
-            }
         }
         
-        // === Motherboard ↔ RAM ===
+        // === Motherboard ↔ RAM (ПРОВЕРКА ПО ram_slots_count) ===
         if (ram) {
             const ramItems = Array.isArray(ram) ? ram : [ram];
+            
+            // 🔌 СЛОТЫ ОПЕРАТИВНОЙ ПАМЯТИ
+            const ramSlots = item.ram_slots_count || 4;
+            
+            if (ramItems.length > ramSlots) {
+                errors.push(`${prefix}❌ Слоты ОЗУ: ${ramSlots}, планок: ${ramItems.length}`);
+            }
+            
             ramItems.forEach(r => {
                 if (item.ram_type && r.type && item.ram_type !== r.type) {
                     errors.push(`${prefix}❌ Тип памяти: ${item.ram_type} ≠ ${r.type}`);
@@ -242,15 +228,53 @@ class CompatibilityValidator {
                 }
             });
             
-            // Объём и слоты
             const totalRam = ramItems.reduce((sum, r) => sum + (r.capacity_gb || 0), 0);
             if (item.max_ram_capacity_gb && totalRam > item.max_ram_capacity_gb) {
                 errors.push(`${prefix}❌ Объём ${totalRam}GB > макс. ${item.max_ram_capacity_gb}GB`);
             }
+        }
+        
+        // === Motherboard ↔ Storage (ПРОВЕРКА ПО m2_slots И sata_ports) ===
+        if (storage) {
+            const storageItems = Array.isArray(storage) ? storage : [storage];
             
-            if (item.ram_slots_count && ramItems.length > item.ram_slots_count) {
-                errors.push(`${prefix}❌ Слоты: ${ramItems.length} > ${item.ram_slots_count}`);
+            // 🔌 СЛОТЫ M.2
+            const m2Slots = item.m2_slots || 2;
+            
+            // 🔌 ПОРТЫ SATA
+            const sataPorts = item.sata_ports || 4;
+            
+            let m2Count = 0;
+            let sataCount = 0;
+            
+            storageItems.forEach(s => {
+                const iface = (s.interface || '').toUpperCase();
+                const type = (s.type || '').toUpperCase();
+                
+                if (iface.includes('M.2') || type.includes('M.2')) {
+                    m2Count++;
+                } else if (iface.includes('SATA') || type.includes('SATA')) {
+                    sataCount++;
+                }
+            });
+            
+            // Проверка M.2 слотов
+            if (m2Count > m2Slots) {
+                errors.push(`${prefix}❌ Слоты M.2: ${m2Slots}, накопителей M.2: ${m2Count}`);
             }
+            
+            // Проверка SATA портов
+            if (sataCount > sataPorts) {
+                errors.push(`${prefix}❌ Порты SATA: ${sataPorts}, накопителей SATA: ${sataCount}`);
+            }
+            
+            // Проверка поддержки NVMe
+            storageItems.forEach(s => {
+                const iface = (s.interface || '').toUpperCase();
+                if ((iface.includes('M.2') || iface.includes('NVME')) && !item.has_m2_nvme && m2Slots === 0) {
+                    warnings.push(`${prefix}⚠️ Материнская плата может не поддерживать M.2 NVMe`);
+                }
+            });
         }
         
         // === Motherboard ↔ Case ===
@@ -267,6 +291,9 @@ class CompatibilityValidator {
         const mb = selection['motherboard'];
         
         if (mb) {
+            // 🔌 ПРОВЕРКА ПО ram_slots_count
+            const ramSlots = mb.ram_slots_count || 4;
+            
             if (item.type && mb.ram_type && item.type !== mb.ram_type) {
                 errors.push(`${prefix}❌ Тип памяти: ${item.type} ≠ ${mb.ram_type}`);
             }
@@ -275,8 +302,9 @@ class CompatibilityValidator {
                 warnings.push(`${prefix}⚠️ Частота ${item.speed_mhz}MHz > ${mb.max_ram_speed_mhz}MHz`);
             }
             
-            if (mb.ram_slots_count && totalCount > mb.ram_slots_count) {
-                errors.push(`${prefix}❌ Слоты: ${totalCount} > ${mb.ram_slots_count}`);
+            // ✅ Проверка количества слотов ОЗУ
+            if (totalCount > ramSlots) {
+                errors.push(`${prefix}❌ Слоты ОЗУ: ${ramSlots}, планок: ${totalCount}`);
             }
         }
     }
@@ -289,29 +317,12 @@ class CompatibilityValidator {
             if (item.length_mm && case_.max_gpu_length_mm && item.length_mm > case_.max_gpu_length_mm) {
                 errors.push(`${prefix}❌ Длина ${item.length_mm}мм > ${case_.max_gpu_length_mm}мм`);
             }
-            if (item.width_slots && case_.max_gpu_width_slots && item.width_slots > case_.max_gpu_width_slots) {
-                warnings.push(`${prefix}⚠️ Видеокарта занимает ${item.width_slots} слота`);
-            }
         }
         
         if (psu) {
             const estimatedPower = this.calculateEstimatedPower(selection);
             if (psu.total_wattage_watts && estimatedPower > psu.total_wattage_watts * 0.85) {
                 errors.push(`${prefix}❌ Нужно ~${Math.round(estimatedPower)}W, есть ${psu.total_wattage_watts}W`);
-            }
-            
-            if (item.pcie_power_connectors && psu.pcie_connectors) {
-                if (item.pcie_power_connectors > psu.pcie_connectors) {
-                    errors.push(`${prefix}❌ Недостаточно коннекторов PCIe`);
-                }
-            }
-        }
-        
-        // PCIe слот (базовая проверка)
-        const mb = selection['motherboard'];
-        if (mb && mb.pcie_version && item.pcie_version) {
-            if (item.pcie_version > mb.pcie_version) {
-                warnings.push(`${prefix}⚠️ Видеокарта PCIe ${item.pcie_version} будет работать в режиме ${mb.pcie_version}`);
             }
         }
     }
@@ -320,21 +331,65 @@ class CompatibilityValidator {
         const mb = selection['motherboard'];
         
         if (mb) {
-            if (item.interface === 'M.2 NVMe' && !mb.has_m2_nvme) {
-                errors.push(`${prefix}❌ Нет слота M.2 NVMe`);
-            }
-            if (item.interface === 'M.2 SATA' && !mb.has_m2_sata) {
-                errors.push(`${prefix}❌ Нет слота M.2 SATA`);
+            const storageInterface = (item.interface || '').toUpperCase();
+            const storageType = (item.type || '').toUpperCase();
+            
+            // 🔌 ПРОВЕРКА M.2 (ПО m2_slots)
+            if (storageInterface.includes('M.2') || storageType.includes('M.2')) {
+                const m2Slots = mb.m2_slots || 2;
+                
+                const isNVMe = storageInterface.includes('NVME') || storageType.includes('NVME');
+                
+                if (isNVMe && !mb.has_m2_nvme && m2Slots === 0) {
+                    warnings.push(`${prefix}⚠️ Материнская плата может не поддерживать M.2 NVMe`);
+                }
+                
+                // ✅ Проверка количества M.2 слотов
+                const m2Count = this.countM2Storage(selection);
+                if (m2Count > m2Slots) {
+                    warnings.push(`${prefix}⚠️ M.2 накопителей: ${m2Count} > слотов: ${m2Slots}`);
+                }
             }
             
-            const m2Slots = mb.m2_slots_count || 0;
-            const sataPorts = mb.sata_ports_count || 0;
-            const maxStorage = m2Slots + sataPorts;
-            
-            if (totalCount > maxStorage) {
-                warnings.push(`${prefix}⚠️ Накопителей: ${totalCount} > слотов: ${maxStorage}`);
+            // 🔌 ПРОВЕРКА SATA (ПО sata_ports)
+            if (storageInterface.includes('SATA') && !storageInterface.includes('M.2')) {
+                const sataPorts = mb.sata_ports || 4;
+                const sataStorageCount = this.countSATAStorage(selection);
+                
+                if (sataStorageCount > sataPorts) {
+                    warnings.push(`${prefix}⚠️ SATA портов: ${sataPorts}, накопителей: ${sataStorageCount}`);
+                }
             }
         }
+    }
+
+    // 🔍 Подсчёт M.2 накопителей в сборке
+    countM2Storage(selection) {
+        const storage = selection['storage'];
+        if (!storage) return 0;
+        
+        const storageItems = Array.isArray(storage) ? storage : [storage];
+        
+        return storageItems.filter(item => {
+            const iface = (item.interface || '').toUpperCase();
+            const type = (item.type || '').toUpperCase();
+            return iface.includes('M.2') || type.includes('M.2');
+        }).length;
+    }
+
+    // 🔍 Подсчёт SATA накопителей в сборке
+    countSATAStorage(selection) {
+        const storage = selection['storage'];
+        if (!storage) return 0;
+        
+        const storageItems = Array.isArray(storage) ? storage : [storage];
+        
+        return storageItems.filter(item => {
+            const iface = (item.interface || '').toUpperCase();
+            const type = (item.type || '').toUpperCase();
+            return (iface.includes('SATA') || type.includes('SATA')) && 
+                   !iface.includes('M.2') && !type.includes('M.2');
+        }).length;
     }
 
     validateCooler(item, selection, errors, warnings, prefix = '') {
@@ -344,7 +399,6 @@ class CompatibilityValidator {
         const coolerSockets = item.supported_sockets || [this.getSocket(item)];
         const coolerTdp = item.max_tdp_watts || item.tdp_limit;
         
-        // === Cooler ↔ CPU ===
         if (cpu) {
             const cpuItems = Array.isArray(cpu) ? cpu : [cpu];
             cpuItems.forEach(c => {
@@ -353,7 +407,7 @@ class CompatibilityValidator {
                 if (cpuSocket && coolerSockets.length > 0 && coolerSockets[0]) {
                     const socketSupported = coolerSockets.some(s => this.areSocketsCompatible(cpuSocket, s));
                     if (!socketSupported) {
-                        errors.push(`${prefix}❌ Кулер не поддерживает сокет ${cpuSocket}. Поддерживает: ${coolerSockets.join(', ')}`);
+                        errors.push(`${prefix}❌ Кулер не поддерживает сокет ${cpuSocket}`);
                     }
                 }
                 
@@ -363,7 +417,6 @@ class CompatibilityValidator {
             });
         }
         
-        // === Cooler ↔ Case ===
         if (case_) {
             if (item.height_mm && case_.max_cooler_height_mm && item.height_mm > case_.max_cooler_height_mm) {
                 errors.push(`${prefix}❌ Высота ${item.height_mm}мм > ${case_.max_cooler_height_mm}мм`);
@@ -377,8 +430,6 @@ class CompatibilityValidator {
         if (item.total_wattage_watts) {
             if (estimatedPower > item.total_wattage_watts * 0.85) {
                 errors.push(`${prefix}❌ Нужно ~${Math.round(estimatedPower)}W, есть ${item.total_wattage_watts}W`);
-            } else if (estimatedPower > item.total_wattage_watts * 0.6) {
-                warnings.push(`${prefix}⚠️ Рекомендуется запас мощности 30-40%`);
             }
         }
     }

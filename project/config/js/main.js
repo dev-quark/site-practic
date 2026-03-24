@@ -304,6 +304,19 @@ class ConfiguratorApp {
 
             const categoryCheck = result.details.find(d => d?.category === this.getCategoryLabel(category));
             
+            // 🔧 ИСПРАВЛЕНИЕ: Для storage считаем compatible если нет критических ошибок
+            if (category === 'storage') {
+                if (categoryCheck && categoryCheck.errors?.length > 0) {
+                    return {
+                        compatible: false,
+                        reason: categoryCheck.errors[0]
+                    };
+                }
+                // Предупреждения не блокируют выбор накопителей
+                return { compatible: true, reason: null };
+            }
+            
+            // Для остальных категорий строгая проверка
             if (categoryCheck && categoryCheck.compatible === false) {
                 return {
                     compatible: false,
@@ -311,6 +324,32 @@ class ConfiguratorApp {
                 };
             }
 
+            // Ручные проверки для Storage
+            if (category === 'storage' && testSelection['motherboard']) {
+                const mb = testSelection['motherboard'];
+                const storageInterface = (item.interface || '').toUpperCase();
+                const storageType = (item.type || '').toUpperCase();
+                
+                // M.2 NVMe проверка (мягкая)
+                if ((storageInterface.includes('M.2') || storageType.includes('M.2')) && 
+                    storageInterface.includes('NVME')) {
+                    const hasM2 = mb.has_m2_nvme || mb.m2_slots_count > 0 || mb.m2_slots > 0;
+                    if (!hasM2) {
+                        return { 
+                            compatible: false, 
+                            reason: 'Материнская плата не поддерживает M.2 NVMe' 
+                        };
+                    }
+                }
+                
+                // ✅ SATA накопители всегда совместимы (есть почти на всех платах)
+                if ((storageInterface.includes('SATA') || storageType.includes('SATA')) && 
+                    !storageInterface.includes('M.2')) {
+                    return { compatible: true, reason: null };
+                }
+            }
+
+            // Остальные проверки (CPU, RAM, GPU, Cooler)
             if (category === 'cpu' && testSelection['motherboard']) {
                 const mb = testSelection['motherboard'];
                 if (item.socket_type && mb?.socket_type && item.socket_type !== mb.socket_type) {
@@ -357,12 +396,20 @@ class ConfiguratorApp {
         let current = 0;
         
         if (category === 'ram') {
+            // 🔌 ОПЕРАТИВНАЯ ПАМЯТЬ → ram_slots_count
             max = mb.ram_slots_count || 4;
             current = Array.isArray(currentSelection) ? currentSelection.length : (currentSelection ? 1 : 0);
         } else if (category === 'storage') {
-            const m2Slots = mb.m2_slots_count || 0;
-            const sataPorts = mb.sata_ports_count || 0;
+            // 🔌 M.2 НАКОПИТЕЛИ → m2_slots
+            const m2Slots = mb.m2_slots || 2;
+            
+            // 🔌 SATA НАКОПИТЕЛИ → sata_ports
+            const sataPorts = mb.sata_ports || 4;
+            
+            // Общий лимит = M.2 + SATA
             max = m2Slots + sataPorts;
+            
+            if (max === 0) max = 6;
             
             const storageSelection = this.selection['storage'];
             if (Array.isArray(storageSelection)) {
@@ -371,7 +418,7 @@ class ConfiguratorApp {
                 current = 1;
             }
         } else if (category === 'gpu') {
-            max = mb.pcie_slots_count || 1;
+            max = mb.pcie_slots_count || mb.pcie_slots || 1;
             current = currentSelection ? 1 : 0;
         }
         
@@ -1073,7 +1120,79 @@ class ConfiguratorApp {
             link.classList.remove('active');
         });
     }
+    getFieldValue(item, fieldNames, defaultValue = 0) {
+        if (!item) return defaultValue;
+        
+        const fields = Array.isArray(fieldNames) ? fieldNames : [fieldNames];
+        
+        for (const field of fields) {
+            if (item[field] !== undefined && item[field] !== null) {
+                if (typeof item[field] === 'number') {
+                    const value = parseInt(item[field]);
+                    if (!isNaN(value) && value > 0) return value;
+                } else if (Array.isArray(item[field])) {
+                    return item[field].length;
+                }
+            }
+            
+            const altKey = Object.keys(item).find(k => k.toLowerCase() === field.toLowerCase());
+            if (altKey && item[altKey] !== undefined && item[altKey] !== null) {
+                if (typeof item[altKey] === 'number') {
+                    const value = parseInt(item[altKey]);
+                    if (!isNaN(value) && value > 0) return value;
+                } else if (Array.isArray(item[altKey])) {
+                    return item[altKey].length;
+                }
+            }
+        }
+        
+        return defaultValue;
+    }
+
+    checkMotherboardLimits(category, currentSelection) {
+        const mb = this.selection['motherboard'];
+        if (!mb) return { allowed: true, max: 99, current: 0 };
+        
+        let max = 99;
+        let current = 0;
+        
+        if (category === 'ram') {
+            max = this.getFieldValue(mb, 
+                ['ram_slots_count', 'ram_slots', 'dimm_slots', 'memory_slots', 'mem_slots'], 
+                4
+            );
+            current = Array.isArray(currentSelection) ? currentSelection.length : (currentSelection ? 1 : 0);
+            
+            console.log(`🔍 RAM: слотов=${max}, выбрано=${current}`);
+        } else if (category === 'storage') {
+            const m2Slots = this.getFieldValue(mb, 
+                ['m2_slots', 'm2_slots_count', 'm2_count', 'nvme_slots', 'M2_SLOTS'], 
+                2
+            );
+            
+            const sataPorts = this.getFieldValue(mb, 
+                ['sata_ports', 'sata_ports_count', 'sata_count', 'SATA_PORTS'], 
+                4
+            );
+            
+            max = m2Slots + sataPorts;
+            if (max === 0) max = 6;
+            
+            const storageSelection = this.selection['storage'];
+            current = storageSelection ? (Array.isArray(storageSelection) ? storageSelection.length : 1) : 0;
+            
+            console.log(`🔍 Storage: M.2=${m2Slots}, SATA=${sataPorts}, всего=${max}, выбрано=${current}`);
+        }
+        
+        return {
+            allowed: current < max,
+            max: max,
+            current: current,
+            remaining: max - current
+        };
+    }
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new ConfiguratorApp();
