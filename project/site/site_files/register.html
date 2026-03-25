@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - PC Builder</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #fff; padding: 20px; }
+        .auth-container { background: #1f1f2e; padding: 40px; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .auth-container h2 { text-align: center; margin-bottom: 25px; color: #00d4aa; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 8px; font-size: 14px; color: #aaa; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid #333; border-radius: 6px; background: #2a2a3e; color: #fff; font-size: 15px; }
+        .form-group input:focus { outline: none; border-color: #00d4aa; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn { width: 100%; padding: 14px; background: #00d4aa; color: #1a1a2e; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
+        .btn:hover { background: #00b894; }
+        .btn:disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
+        .links { text-align: center; margin-top: 20px; color: #aaa; font-size: 14px; }
+        .links a { color: #00d4aa; text-decoration: none; }
+        .error { color: #ff6b6b; font-size: 14px; margin-top: 8px; min-height: 20px; display: none; }
+        .error-field { color: #ff6b6b; font-size: 12px; margin-top: 4px; display: none; }
+        .input-error { border-color: #ff6b6b !important; }
+        @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="auth-container">
+    <h2>📝 Регистрация</h2>
+    <form id="registerForm" onsubmit="handleRegister(event)">
+        <div class="form-group">
+            <label for="username">Имя пользователя *</label>
+            <input type="text" id="username" name="username" placeholder="Логин (3-20 символов)" minlength="3" maxlength="20" required pattern="[A-Za-z0-9_]+">
+            <div class="error-field" id="usernameError"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="example@mail.ru">
+                <div class="error-field" id="emailError"></div>
+            </div>
+            <div class="form-group">
+                <label for="phone">Телефон</label>
+                <input type="tel" id="phone" name="phone" placeholder="+7 (999) 000-00-00">
+                <div class="error-field" id="phoneError"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="password">Пароль *</label>
+            <input type="password" id="password" name="password" placeholder="Минимум 6 символов" minlength="6" required>
+        </div>
+        <div class="form-group">
+            <label for="confirmPassword">Подтвердите пароль *</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Повторите пароль" minlength="6" required>
+            <div class="error-field" id="confirmError"></div>
+        </div>
+        <button type="submit" class="btn" id="registerBtn">Зарегистрироваться</button>
+        <p class="error" id="globalError"></p>
+    </form>
+    <div class="links">
+        <a href="login.html">← Уже есть аккаунт? Войти</a>
+    </div>
+</div>
+<script src="auth.js"></script>
+<script>
+// Если уже авторизован — сразу на главную
+if (isAuthenticated()) {
+    location.replace('index.html');
+}
+// Проверка логина на занятость
+document.getElementById('username').addEventListener('blur', async function() {
+    const username = this.value.trim();
+    if (username.length < 3) return;
+    try {
+        const res = await fetch(`${API_BASE}/api/check-username?username=${encodeURIComponent(username)}`);
+        const data = await res.json();
+        const errorEl = document.getElementById('usernameError');
+        if (!data.available) {
+            errorEl.textContent = '⚠️ Этот логин уже занят';
+            errorEl.style.display = 'block';
+            this.classList.add('input-error');
+        } else {
+            errorEl.style.display = 'none';
+            this.classList.remove('input-error');
+        }
+    } catch(e) { console.warn('Не удалось проверить логин', e); }
+});
+async function handleRegister(event) {
+    event.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const registerBtn = document.getElementById('registerBtn');
+    const globalError = document.getElementById('globalError');
+    // Сброс
+    globalError.textContent = '';
+    globalError.style.display = 'none';
+    document.querySelectorAll('.error-field').forEach(el => { el.textContent = ''; el.style.display = 'none'; });
+    document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+    // Валидация
+    if (password !== confirmPassword) {
+        document.getElementById('confirmError').textContent = '❌ Пароли не совпадают';
+        document.getElementById('confirmError').style.display = 'block';
+        document.getElementById('confirmPassword').classList.add('input-error');
+        return;
+    }
+    registerBtn.disabled = true;
+    registerBtn.textContent = 'Регистрация...';
+    try {
+        const response = await fetch(`${API_BASE}/api/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, email: email || null, phone: phone || null })
+        });
+        let data = {};
+        try { data = await response.json(); } catch(e) {}
+        if (!response.ok) {
+            if (data.detail && response.headers.get('X-Error-Field')) {
+                const field = response.headers.get('X-Error-Field');
+                const errorEl = document.getElementById(field + 'Error');
+                if (errorEl) {
+                    errorEl.textContent = '⚠️ ' + data.detail;
+                    errorEl.style.display = 'block';
+                    document.getElementById(field).classList.add('input-error');
+                }
+            }
+            throw new Error(data.detail || data.error || 'Ошибка регистрации');
+        }
+        // ✅ УСПЕХ: Сохраняем куки
+        setCookie(TOKEN_KEY, data.token, 7);
+        setCookie(USERNAME_KEY, username, 7);
+        globalError.style.color = '#00d4aa';
+        globalError.textContent = '✅ Регистрация успешна! Перенаправление...';
+        globalError.style.display = 'block';
+        // 🔥 Полная перезагрузка с очисткой кэша
+        setTimeout(() => {
+            location.replace('index.html?' + Date.now());
+        }, 1000);
+    } catch (err) {
+        console.error('Register error:', err);
+        globalError.style.color = '#ff6b6b';
+        globalError.textContent = err.message || 'Не удалось зарегистрироваться';
+        globalError.style.display = 'block';
+        registerBtn.disabled = false;
+        registerBtn.textContent = 'Зарегистрироваться';
+    }
+}
+</script>
+</body>
+</html>

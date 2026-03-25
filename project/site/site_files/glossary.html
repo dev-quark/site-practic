@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Builder - Глоссарий</title>
+    <style>
+        /* === БАЗОВЫЕ СТИЛИ === */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #f4f4f4;
+        }
+
+        /* === ШАПКА === */
+        .head {
+            background-color: black;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+            z-index: 1000;
+        }
+
+        .head-left { display: flex; align-items: center; gap: 15px; }
+
+        /* 🔥 ЛОГОТИП + НАЗВАНИЕ */
+        .site-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00d4aa;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .site-logo:hover { color: #00b894; }
+
+        /* 🔥 ТЕКСТ "ПАНЕЛЬ" */
+        .panel-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            margin-left: 10px;
+            padding: 6px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .panel-link:hover { background: #222; color: #00d4aa; }
+        .panel-link.hidden { display: none !important; }
+
+        .open_close {
+            font-size: 30px;
+            color: white;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* === ПОЛЬЗОВАТЕЛЬ В ШАПКЕ === */
+        .user-section { display: flex; align-items: center; gap: 10px; }
+
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
+            border: 2px solid #00d4aa; cursor: pointer; background: #333;
+            flex-shrink: 0; position: relative;
+        }
+        .user-avatar:hover { transform: scale(1.05); }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .user-avatar-placeholder {
+            width: 100%; height: 100%; display: flex; align-items: center;
+            justify-content: center; font-weight: bold; color: #000; font-size: 16px;
+        }
+
+        .user-name {
+            color: white; font-weight: 600; font-size: 15px; cursor: pointer;
+            text-decoration: none;
+        }
+        .user-name:hover { text-decoration: underline; }
+
+        .role-badge {
+            padding: 3px 8px; border-radius: 10px; font-size: 10px;
+            font-weight: 600; border: 1px solid; white-space: nowrap; color: #fff;
+        }
+
+        .auth-buttons-mini a {
+            color: white; text-decoration: none; margin: 0 10px; font-size: 14px;
+        }
+        .auth-buttons-mini a:hover { color: #ccc; }
+
+        /* === ОСНОВНОЙ КОНТЕЙНЕР === */
+        .main-wrapper { display: flex; flex: 1; position: relative; overflow: hidden; }
+
+        /* === БОКОВОЕ МЕНЮ === */
+        .list_open {
+            background-color: #1a1a1a; width: 0; overflow: hidden;
+            transition: width 0.3s ease; white-space: nowrap; flex-shrink: 0;
+        }
+        .list_open.active { width: 300px; overflow-y: auto; }
+        .list_open ul { list-style: none; padding: 20px 0; margin: 0; width: 300px; }
+        .list_open li { padding: 15px 25px; border-bottom: 1px solid #333; }
+        .list_open a {
+            color: white; text-decoration: none; font-size: 18px; display: block;
+        }
+        .list_open a:hover { background-color: #333; }
+        .list_open a.active { color: #00d4aa; font-weight: 600; }
+
+        /* === КОНТЕНТ === */
+        .content { 
+            flex: 1; 
+            padding: 20px; 
+            overflow-y: auto; 
+            background-color: #f4f4f4; 
+        }
+        .hidden { display: none !important; }
+
+        /* === 🔥 СТИЛИ ГЛОССАРИЯ === */
+        .glossary-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ddd;
+        }
+        .glossary-header h1 {
+            color: #000;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .glossary-header p {
+            color: #666;
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .glossary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .glossary-item {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #00d4aa;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .glossary-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+        }
+
+        .glossary-term {
+            font-weight: 700;
+            font-size: 18px;
+            color: #000;
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .glossary-term::before {
+            content: "📌";
+            font-size: 16px;
+        }
+
+        .glossary-definition {
+            color: #444;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Поиск по глоссарию */
+        .glossary-search {
+            margin-bottom: 20px;
+        }
+        .glossary-search input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            background: #fff;
+            transition: border-color 0.2s;
+        }
+        .glossary-search input:focus {
+            outline: none;
+            border-color: #00d4aa;
+        }
+        .glossary-search input::placeholder {
+            color: #999;
+        }
+
+        /* Адаптив */
+        @media (max-width: 768px) {
+            .head { padding: 0 10px; }
+            .site-logo span { display: none; }
+            .panel-link { font-size: 14px; padding: 4px 8px; }
+            .list_open.active { width: 250px; }
+            .list_open ul { width: 250px; }
+            .content { padding: 15px; }
+            .glossary-grid { grid-template-columns: 1fr; }
+            .glossary-term { font-size: 16px; }
+            .glossary-definition { font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- === ШАПКА === -->
+    <header class="head">
+        <div class="head-left">
+            <button class="open_close" id="menuBtn" onclick="toggleMenu()">☰</button>
+            
+            <!-- ЛОГОТИП + НАЗВАНИЕ -->
+            <a href="index.html" class="site-logo">
+                🖥️ <span>PC Builder</span>
+            </a>
+            
+            <!-- ПАНЕЛЬ (видна только для role >= 2) -->
+            <a href="panel.html" class="panel-link hidden" id="panelLink">Панель</a>
+        </div>
+        
+        <!-- ПОЛЬЗОВАТЕЛЬ: аватар + ник + роль -->
+        <div class="user-section" id="userSection">
+            <a href="register.html">Зарегистрироваться</a>
+            <a href="login.html">Войти</a>
+        </div>
+    </header>
+
+    <!-- === ОСНОВНОЙ КОНТЕЙНЕР === -->
+    <div class="main-wrapper">
+        
+        <!-- БОКОВОЕ МЕНЮ -->
+        <aside class="list_open" id="sideMenu">
+            <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="about.html">О нас</a></li>
+                <li><a href="assembly.html">Каталог сборок</a></li>
+                <li><a href="components.html">Каталог комплектующих</a></li>
+                <li><a href="https://config.forgepower.рит.online">Конфигуратор</a></li>
+                <li><a href="collection.html">Для начинающих</a></li>
+                <li><a href="glossary.html" class="active">Глоссарий</a></li>
+                <li><a href="po.html">Список ПО</a></li>
+                <li><a href="contacts.html">Контакты</a></li>
+                <li><a href="https://forum.forgepower.рит.online">Сообщество</a></li>
+            </ul>
+        </aside>
+
+        <!-- 🔥 КОНТЕНТ: ГЛОССАРИЙ -->
+        <main class="content">
+            
+            <div class="glossary-header">
+                <h1>📖 Глоссарий</h1>
+                <p>Словарь терминов, используемых в проекте PC Builder</p>
+            </div>
+
+            <!-- Поиск -->
+            <div class="glossary-search">
+                <input type="text" id="glossarySearch" placeholder="🔍 Поиск термина..." oninput="filterGlossary()">
+            </div>
+
+            <!-- Сетка терминов -->
+            <div class="glossary-grid" id="glossaryGrid">
+                
+                <div class="glossary-item" data-term="пк персональный компьютер">
+                    <h3 class="glossary-term">ПК</h3>
+                    <p class="glossary-definition">Персональный компьютер; вычислительная машина, собранная из отдельных компонентов (процессор, видеокарта, память и т.д.) для решения задач пользователя.</p>
+                </div>
+
+                <div class="glossary-item" data-term="гайд руководство инструкция">
+                    <h3 class="glossary-term">Гайд</h3>
+                    <p class="glossary-definition">Пошаговое руководство или инструкция (текстовая или видео), помогающая пользователю разобраться в выборе комплектующих, процессе сборки или настройке системы.</p>
+                </div>
+
+                <div class="glossary-item" data-term="комплектующие аппаратные компоненты">
+                    <h3 class="glossary-term">Комплектующие</h3>
+                    <p class="glossary-definition">Отдельные аппаратные компоненты компьютера (процессор, материнская плата, видеокарта, оперативная память, накопители, блок питания, корпус), которые подбираются вместе для создания единой системы.</p>
+                </div>
+
+                <div class="glossary-item" data-term="сайт веб-ресурс интернет-магазин">
+                    <h3 class="glossary-term">Сайт</h3>
+                    <p class="glossary-definition">Веб-ресурс (интернет-магазин), предоставляющий пользователям инструменты для подбора конфигурации, проверки совместимости, заказа деталей и оформления услуг по сборке.</p>
+                </div>
+
+                <div class="glossary-item" data-term="по программное обеспечение">
+                    <h3 class="glossary-term">ПО</h3>
+                    <p class="glossary-definition">Программное обеспечение; совокупность программ, установленных на компьютер для управления его работой и выполнения задач (операционная система, драйверы, утилиты, игры).</p>
+                </div>
+
+                <div class="glossary-item" data-term="глоссарий словарь терминов">
+                    <h3 class="glossary-term">Глоссарий</h3>
+                    <p class="glossary-definition">Словарь узкоспециализированных терминов, используемых в проекте, с их краткими пояснениями для унификации понимания между командой и клиентами.</p>
+                </div>
+
+                <div class="glossary-item" data-term="админ панель управление">
+                    <h3 class="glossary-term">Админ панель</h3>
+                    <p class="glossary-definition">Закрытый раздел сайта, доступный только сотрудникам компании, предназначенный для управления товарами, заказами, пользователями, контентом и настройками конфигуратора.</p>
+                </div>
+
+                <div class="glossary-item" data-term="real-time реальное время обновление">
+                    <h3 class="glossary-term">Real-time (Реальное время)</h3>
+                    <p class="glossary-definition">Режим работы системы, при котором данные обновляются мгновенно. В контексте конфигуратора: изменение цены или статуса совместимости происходит сразу же после выбора любой детали, без перезагрузки страницы.</p>
+                </div>
+
+                <div class="glossary-item" data-term="сообщество пользователи форум">
+                    <h3 class="glossary-term">Сообщество</h3>
+                    <p class="glossary-definition">Группа пользователей проекта (клиенты, энтузиасты, эксперты), объединенных интересом к компьютерному железу, общающихся на форуме или в социальных сетях проекта.</p>
+                </div>
+
+                <div class="glossary-item" data-term="button_switch_styles интерфейс кнопка тема">
+                    <h3 class="glossary-term">Button_Switch_Styles</h3>
+                    <p class="glossary-definition">Элемент интерфейса (кнопка-переключатель), позволяющий пользователю менять визуальное оформление страницы (например, переключение между светлой и темной темой или разными стилями отображения карточек товаров).</p>
+                </div>
+
+                <div class="glossary-item" data-term="фреймворк платформа разработка">
+                    <h3 class="glossary-term">Фреймворк</h3>
+                    <p class="glossary-definition">Программная платформа или каркас, на базе которого разработчики создают сайт и конфигуратор, ускоряя процесс разработки и обеспечивая стабильность кода (например, React, Vue, Laravel).</p>
+                </div>
+
+                <div class="glossary-item" data-term="форум дискуссии вопросы помощь">
+                    <h3 class="glossary-term">Форум</h3>
+                    <p class="glossary-definition">Раздел сайта или отдельная площадка для дискуссий, где пользователи могут задавать вопросы, делиться своими сборками, обсуждать новости железа и получать помощь от сообщества и модераторов.</p>
+                </div>
+
+                <div class="glossary-item" data-term="верстка сайта дизайн html css">
+                    <h3 class="glossary-term">Верстка сайта</h3>
+                    <p class="glossary-definition">Процесс перевода дизайна макета в код (HTML/CSS), определяющий визуальное отображение элементов страницы, их расположение, адаптивность под мобильные устройства и анимации.</p>
+                </div>
+
+                <div class="glossary-item" data-term="backend бэкенд сервер логика">
+                    <h3 class="glossary-term">Backend (Бэкенд)</h3>
+                    <p class="glossary-definition">«Серверная» часть сайта, скрытая от глаз пользователя. Отвечает за логику работы конфигуратора (проверку совместимости), хранение базы данных товаров, обработку платежей и формирование заказов.</p>
+                </div>
+
+                <div class="glossary-item" data-term="frontend фронтенд клиент интерфейс">
+                    <h3 class="glossary-term">Frontend (Фронтенд)</h3>
+                    <p class="glossary-definition">«Клиентская» часть сайта, с которой взаимодействует пользователь. Включает в себя интерфейс конфигуратора, каталог товаров, кнопок, форм ввода и визуальные эффекты.</p>
+                </div>
+
+                <div class="glossary-item" data-term="сборка услуга монтаж настройка">
+                    <h3 class="glossary-term">Сборка</h3>
+                    <p class="glossary-definition">Услуга или физический процесс монтажа выбранных комплектующих в корпус, установки системы охлаждения, кабелей, а также первоначальной настройки ПО и тестирования системы в мастерской компании.</p>
+                </div>
+
+                <div class="glossary-item" data-term="стек технологий языки фреймворки базы данных">
+                    <h3 class="glossary-term">Стек технологий</h3>
+                    <p class="glossary-definition">Набор языков программирования, фреймворков, библиотек, баз данных и инструментов, используемых для создания и работы программного продукта.</p>
+                </div>
+
+                <div class="glossary-item" data-term="хост сервер размещение">
+                    <h3 class="glossary-term">Хост</h3>
+                    <p class="glossary-definition">Сервер (физический или виртуальный), где размещается проект.</p>
+                </div>
+
+                <div class="glossary-item" data-term="lamp stack linux apache mysql php">
+                    <h3 class="glossary-term">LAMP Stack</h3>
+                    <p class="glossary-definition">Набор ПО для веба: Linux (ОС) + Apache (сервер) + MySQL (база) + PHP (язык).</p>
+                </div>
+
+                <div class="glossary-item" data-term="тайм-триггер учет времени задачи">
+                    <h3 class="glossary-term">Тайм-триггер</h3>
+                    <p class="glossary-definition">Инструмент для учета времени, затраченного на задачи (например, Toggl, Clockify).</p>
+                </div>
+
+                <div class="glossary-item" data-term="чек-лист список проверка шаги">
+                    <h3 class="glossary-term">Чек-лист</h3>
+                    <p class="glossary-definition">Список обязательных шагов для проверки готовности задачи.</p>
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- === СКРИПТЫ === -->
+    <script src="auth.js"></script>
+    <script>
+        // === ПЕРЕКЛЮЧЕНИЕ МЕНЮ ===
+        function toggleMenu() {
+            const menu = document.getElementById('sideMenu');
+            const btn = document.getElementById('menuBtn');
+            if (menu) menu.classList.toggle('active');
+            if (btn) btn.innerHTML = menu.classList.contains('active') ? '✕' : '☰';
+        }
+
+        // === 🔍 ПОИСК ПО ГЛОССАРИЮ ===
+        function filterGlossary() {
+            const searchInput = document.getElementById('glossarySearch');
+            const filter = searchInput.value.toLowerCase().trim();
+            const items = document.querySelectorAll('.glossary-item');
+            
+            items.forEach(item => {
+                const term = item.getAttribute('data-term') || '';
+                const title = item.querySelector('.glossary-term')?.textContent.toLowerCase() || '';
+                
+                if (term.includes(filter) || title.includes(filter)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // === 🔥 ФУНКЦИЯ: Путь из БД → Полный URL для аватара ===
+        function buildAvatarUrl(pathFromDb) {
+            if (!pathFromDb) return null;
+            if (pathFromDb.startsWith('http://') || pathFromDb.startsWith('https://')) {
+                return pathFromDb;
+            }
+            return `${API_BASE}${pathFromDb}`;
+        }
+
+        // === 🔥 ФУНКЦИЯ: Отрисовка пользователя в шапке с аватаром с сервера ===
+        function renderUserSection(containerId, profile = null) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            if (!isAuthenticated()) {
+                container.innerHTML = `
+                    <div class="auth-buttons-mini">
+                        <a href="register.html">Зарегистрироваться</a>
+                        <a href="login.html">Войти</a>
+                    </div>
+                `;
+                return;
+            }
+
+            const username = getCurrentUsername();
+            const displayName = profile?.nickname || profile?.user_name || username;
+            const roleId = profile?.role || 1;
+            const roleConfig = ROLES_CONFIG[roleId] || ROLES_CONFIG[1];
+            
+            // 🔥 Получаем путь аватара из БД
+            const rawAvatarUrl = profile?.avatar_url || profile?.user_img;
+            
+            // 🔥 Строим полный URL с timestamp (отключает кэш!)
+            const avatarUrl = buildAvatarUrl(rawAvatarUrl);
+            
+            console.log('🖼️ Avatar URL:', avatarUrl);
+            
+            // HTML аватара с обработкой ошибки
+            const avatarHtml = avatarUrl
+                ? `<img src="${avatarUrl}" alt="${displayName}" 
+                       style="width:100%;height:100%;object-fit:cover"
+                       onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                   <div class="user-avatar-placeholder" style="display:none;background:${roleConfig.color}">
+                       ${displayName.charAt(0).toUpperCase()}
+                   </div>`
+                : `<div class="user-avatar-placeholder" style="background:${roleConfig.color}">
+                       ${displayName.charAt(0).toUpperCase()}
+                   </div>`;
+
+            container.innerHTML = `
+                <div class="user-avatar" onclick="location.href='profile.html'" title="Профиль">
+                    ${avatarHtml}
+                </div>
+                <a href="profile.html" class="user-name" style="color:${roleConfig.color}">${displayName}</a>
+                <span class="role-badge" style="background:${roleConfig.color}33;border-color:${roleConfig.color};color:${roleConfig.color}">
+                    ${roleConfig.name}
+                </span>
+                <a href="#" onclick="logout(event)" style="color:#fff;margin-left:8px;font-size:13px">Выйти</a>
+            `;
+        }
+
+        // === ОБНОВЛЕНИЕ ВИДИМОСТИ "ПАНЕЛЬ" ===
+        function updatePanelLink(profile = null) {
+            const panelLink = document.getElementById('panelLink');
+            if (!panelLink) return;
+            const roleId = profile?.role || 1;
+            const hasAccess = isAuthenticated() && typeof roleId === 'number' && roleId >= 2;
+            panelLink.classList.toggle('hidden', !hasAccess);
+        }
+
+        // === ИНИЦИАЛИЗАЦИЯ СТРАНИЦЫ ===
+        async function initPage() {
+            renderUserSection('userSection');
+            updatePanelLink(null);
+            
+            if (isAuthenticated()) {
+                try {
+                    const username = getCurrentUsername();
+                    if (username) {
+                        const profile = await fetchProfile(username);
+                        if (profile) {
+                            renderUserSection('userSection', profile);
+                            updatePanelLink(profile);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Ошибка загрузки профиля:', e);
+                    updatePanelLink(null);
+                }
+            } else {
+                updatePanelLink(null);
+            }
+        }
+
+        // Запуск после загрузки DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPage);
+        } else {
+            initPage();
+        }
+
+        // Закрытие меню при клике вне
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('sideMenu');
+            const btn = document.getElementById('menuBtn');
+            if (menu && menu.classList.contains('active') && 
+                !menu.contains(e.target) && !btn.contains(e.target)) {
+                menu.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
