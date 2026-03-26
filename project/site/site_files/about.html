@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>О нас - PC Builder</title>
+    <style>
+        /* === БАЗОВЫЕ СТИЛИ (из шаблона) === */
+        body { margin: 0; font-family: Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; background-color: #f4f4f4; }
+        .head { background-color: black; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0; z-index: 1000; }
+        .head-left { display: flex; align-items: center; gap: 15px; }
+        .site-logo { font-size: 24px; font-weight: 700; color: #00d4aa; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .site-logo:hover { color: #00b894; }
+        .panel-link { color: #fff; text-decoration: none; font-size: 16px; font-weight: 500; margin-left: 10px; padding: 6px 12px; border-radius: 4px; transition: background 0.2s; }
+        .panel-link:hover { background: #222; color: #00d4aa; }
+        .panel-link.hidden { display: none !important; }
+        .open_close { font-size: 30px; color: white; background: none; border: none; cursor: pointer; }
+        .user-section { display: flex; align-items: center; gap: 10px; }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; border: 2px solid #00d4aa; cursor: pointer; background: #333; flex-shrink: 0; position: relative; }
+        .user-avatar:hover { transform: scale(1.05); }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .user-avatar-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000; font-size: 16px; }
+        .user-name { color: white; font-weight: 600; font-size: 15px; cursor: pointer; text-decoration: none; }
+        .user-name:hover { text-decoration: underline; }
+        .role-badge { padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; border: 1px solid; white-space: nowrap; color: #fff; }
+        .auth-buttons-mini a { color: white; text-decoration: none; margin: 0 10px; font-size: 14px; }
+        .auth-buttons-mini a:hover { color: #ccc; }
+        .main-wrapper { display: flex; flex: 1; position: relative; overflow: hidden; }
+        .list_open { background-color: #1a1a1a; width: 0; overflow: hidden; transition: width 0.3s ease; white-space: nowrap; flex-shrink: 0; }
+        .list_open.active { width: 300px; overflow-y: auto; }
+        .list_open ul { list-style: none; padding: 20px 0; margin: 0; width: 300px; }
+        .list_open li { padding: 15px 25px; border-bottom: 1px solid #333; }
+        .list_open a { color: white; text-decoration: none; font-size: 18px; display: block; }
+        .list_open a:hover { background-color: #333; }
+        .list_open a.active { color: #00d4aa; font-weight: 600; }
+        .content { flex: 1; padding: 20px; overflow-y: auto; background-color: #f4f4f4; }
+        .hidden { display: none !important; }
+        @media (max-width: 768px) {
+            .head { padding: 0 10px; }
+            .site-logo span { display: none; }
+            .panel-link { font-size: 14px; padding: 4px 8px; }
+            .list_open.active { width: 250px; }
+            .list_open ul { width: 250px; }
+            .content { padding: 15px; }
+        }
+
+        /* === СТИЛИ СТРАНИЦЫ "О НАС" === */
+        .about-header {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white; padding: 40px; border-radius: 12px; margin-bottom: 30px;
+            text-align: center;
+        }
+        .about-header h1 { font-size: 2.2rem; margin: 0 0 15px; color: #00d4aa; }
+        .about-header p { font-size: 1.1rem; opacity: 0.9; max-width: 700px; margin: 0 auto; }
+
+        .about-section {
+            background: #fff; padding: 30px; border-radius: 10px; margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .about-section h2 {
+            color: #333; margin: 0 0 20px; padding-bottom: 10px;
+            border-bottom: 2px solid #00d4aa; display: inline-block;
+        }
+        .about-section p { color: #555; line-height: 1.7; margin: 0 0 15px; }
+        .about-section ul { color: #555; line-height: 1.8; padding-left: 25px; margin: 10px 0; }
+        .about-section li { margin: 8px 0; }
+
+        .team-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px; margin-top: 20px;
+        }
+        .team-member {
+            text-align: center; padding: 20px; background: #f9f9f9;
+            border-radius: 8px; transition: transform 0.2s;
+        }
+        .team-member:hover { transform: translateY(-3px); }
+        .member-avatar {
+            width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 15px;
+            background: linear-gradient(135deg, #00d4aa, #00a885);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; color: #fff; font-weight: bold;
+        }
+        .member-name { font-weight: 600; color: #333; margin: 5px 0; }
+        .member-role { color: #00d4aa; font-size: 0.9rem; }
+        .member-bio { color: #666; font-size: 0.9rem; margin-top: 10px; }
+
+        .values-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px; margin-top: 15px;
+        }
+        .value-item {
+            padding: 20px; background: #f9f9f9; border-radius: 8px;
+            border-left: 4px solid #00d4aa;
+        }
+        .value-item h4 { margin: 0 0 8px; color: #333; }
+        .value-item p { margin: 0; color: #666; font-size: 0.95rem; }
+
+        .cta-box {
+            background: linear-gradient(135deg, #00d4aa 0%, #00a885 100%);
+            color: #000; padding: 30px; border-radius: 10px; text-align: center;
+            margin-top: 30px;
+        }
+        .cta-box h3 { margin: 0 0 15px; font-size: 1.5rem; }
+        .cta-box p { margin: 0 0 20px; opacity: 0.9; }
+        .cta-btn {
+            display: inline-block; padding: 12px 30px; background: #000;
+            color: #fff; text-decoration: none; border-radius: 8px;
+            font-weight: 600; transition: transform 0.2s;
+        }
+        .cta-btn:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    <header class="head">
+        <div class="head-left">
+            <button class="open_close" id="menuBtn" onclick="toggleMenu()">☰</button>
+            <a href="index.html" class="site-logo">🖥️ <span>PC Builder</span></a>
+            <a href="panel.html" class="panel-link hidden" id="panelLink">Панель</a>
+        </div>
+        <div class="user-section" id="userSection">
+            <a href="register.html">Зарегистрироваться</a>
+            <a href="login.html">Войти</a>
+        </div>
+    </header>
+
+    <div class="main-wrapper">
+        <aside class="list_open" id="sideMenu">
+            <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="about.html" class="active">О нас</a></li>
+                <li><a href="assembly.html">Каталог сборок</a></li>
+                <li><a href="components.html">Каталог комплектующих</a></li>
+                <li><a href="https://config.forgepower.рит.online">Конфигуратор</a></li>
+                <li><a href="collection.html">Для начинающих</a></li>
+                <li><a href="glossary.html">Глоссарий</a></li>
+                <li><a href="po.html">Список ПО</a></li>
+                <li><a href="contacts.html">Контакты</a></li>
+                <li><a href="https://forum.forgepower.рит.online">Сообщество</a></li>
+            </ul>
+        </aside>
+
+        <main class="content">
+            <section class="about-header">
+                <h1>О проекте PC Builder</h1>
+                <p>Мы создаем инструменты и знания, чтобы каждый мог собрать компьютер своей мечты</p>
+            </section>
+
+            <section class="about-section">
+                <h2>🎯 Наша миссия</h2>
+                <p>PC Builder — это платформа для энтузиастов, геймеров и профессионалов, которые хотят разобраться в мире компьютерного железа и создать идеальную систему под свои задачи.</p>
+                <p>Мы верим, что сборка ПК должна быть доступной, понятной и увлекательной. Поэтому мы объединили в одном месте:</p>
+                <ul>
+                    <li>✅ Умный конфигуратор с проверкой совместимости</li>
+                    <li>✅ Актуальную базу комплектующих с характеристиками</li>
+                    <li>✅ Образовательный контент для любого уровня подготовки</li>
+                    <li>✅ Активное сообщество для обмена опытом</li>
+                </ul>
+            </section>
+
+            <section class="about-section">
+                <h2>💡 Наши ценности</h2>
+                <div class="values-grid">
+                    <div class="value-item">
+                        <h4>🔍 Объективность</h4>
+                        <p>Независимые обзоры и честные сравнения без скрытой рекламы</p>
+                    </div>
+                    <div class="value-item">
+                        <h4>📚 Доступность</h4>
+                        <p>Сложные темы простым языком — от базовых понятий до тонкостей разгона</p>
+                    </div>
+                    <div class="value-item">
+                        <h4>🤝 Сообщество</h4>
+                        <p>Каждый пользователь может поделиться опытом и помочь другим</p>
+                    </div>
+                    <div class="value-item">
+                        <h4>🔄 Актуальность</h4>
+                        <p>Регулярные обновления базы данных и контента в соответствии с рынком</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="about-section">
+                <h2>👥 Команда проекта</h2>
+                <div class="team-grid">
+                    <div class="team-member">
+                        <div class="member-avatar">А</div>
+                        <div class="member-name">Алексей</div>
+                        <div class="member-role">Основатель</div>
+                        <div class="member-bio">Энтузиаст железа с 15-летним стажем</div>
+                    </div>
+                    <div class="team-member">
+                        <div class="member-avatar">М</div>
+                        <div class="member-name">Мария</div>
+                        <div class="member-role">Контент-лид</div>
+                        <div class="member-bio">Технический писатель и геймер</div>
+                    </div>
+                    <div class="team-member">
+                        <div class="member-avatar">Д</div>
+                        <div class="member-name">Дмитрий</div>
+                        <div class="member-role">Разработчик</div>
+                        <div class="member-bio">Fullstack-инженер, фанат оптимизации</div>
+                    </div>
+                    <div class="team-member">
+                        <div class="member-avatar">К</div>
+                        <div class="member-name">Ксения</div>
+                        <div class="member-role">Модератор</div>
+                        <div class="member-bio">Эксперт по сборке и апгрейду</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="about-section">
+                <h2>📈 История проекта</h2>
+                <p><strong>2024</strong> — Запуск первой версии конфигуратора с базой из 200 компонентов</p>
+                <p><strong>2025</strong> — Добавление сообщества, глоссария и раздела для новичков</p>
+                <p><strong>2026</strong> — Полная переработка платформы, запуск мобильного интерфейса и интеграция с форумами</p>
+                <p>Сегодня PC Builder помогает тысячам пользователей по всему миру создавать свои идеальные системы.</p>
+            </section>
+
+            <div class="cta-box">
+                <h3>Хотите стать частью проекта?</h3>
+                <p>Присоединяйтесь к нашему сообществу, предлагайте идеи или помогайте с развитием платформы</p>
+                <a href="contacts.html" class="cta-btn">Связаться с нами</a>
+            </div>
+        </main>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('sideMenu');
+            const btn = document.getElementById('menuBtn');
+            if (menu) menu.classList.toggle('active');
+            if (btn) btn.innerHTML = menu.classList.contains('active') ? '✕' : '☰';
+        }
+        function buildAvatarUrl(pathFromDb) {
+            if (!pathFromDb) return null;
+            if (pathFromDb.startsWith('http://') || pathFromDb.startsWith('https://')) return pathFromDb;
+            return `${API_BASE}${pathFromDb}`;
+        }
+        function renderUserSection(containerId, profile = null) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            if (!isAuthenticated()) {
+                container.innerHTML = `<div class="auth-buttons-mini"><a href="register.html">Зарегистрироваться</a><a href="login.html">Войти</a></div>`;
+                return;
+            }
+            const username = getCurrentUsername();
+            const displayName = profile?.nickname || profile?.user_name || username;
+            const roleId = profile?.role || 1;
+            const roleConfig = ROLES_CONFIG[roleId] || ROLES_CONFIG[1];
+            const rawAvatarUrl = profile?.avatar_url || profile?.user_img;
+            const avatarUrl = buildAvatarUrl(rawAvatarUrl);
+            const avatarHtml = avatarUrl
+                ? `<img src="${avatarUrl}" alt="${displayName}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="user-avatar-placeholder" style="display:none;background:${roleConfig.color}">${displayName.charAt(0).toUpperCase()}</div>`
+                : `<div class="user-avatar-placeholder" style="background:${roleConfig.color}">${displayName.charAt(0).toUpperCase()}</div>`;
+            container.innerHTML = `<div class="user-avatar" onclick="location.href='profile.html'" title="Профиль">${avatarHtml}</div><a href="profile.html" class="user-name" style="color:${roleConfig.color}">${displayName}</a><span class="role-badge" style="background:${roleConfig.color}33;border-color:${roleConfig.color};color:${roleConfig.color}">${roleConfig.name}</span><a href="#" onclick="logout(event)" style="color:#fff;margin-left:8px;font-size:13px">Выйти</a>`;
+        }
+        function updatePanelLink(profile = null) {
+            const panelLink = document.getElementById('panelLink');
+            if (!panelLink) return;
+            const roleId = profile?.role || 1;
+            const hasAccess = isAuthenticated() && typeof roleId === 'number' && roleId >= 2;
+            panelLink.classList.toggle('hidden', !hasAccess);
+        }
+        async function initPage() {
+            renderUserSection('userSection');
+            updatePanelLink(null);
+            if (isAuthenticated()) {
+                try {
+                    const username = getCurrentUsername();
+                    if (username) {
+                        const profile = await fetchProfile(username);
+                        if (profile) { renderUserSection('userSection', profile); updatePanelLink(profile); }
+                    }
+                } catch (e) { console.warn('Ошибка загрузки профиля:', e); updatePanelLink(null); }
+            } else { updatePanelLink(null); }
+        }
+        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initPage); } else { initPage(); }
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('sideMenu');
+            const btn = document.getElementById('menuBtn');
+            if (menu && menu.classList.contains('active') && !menu.contains(e.target) && !btn.contains(e.target)) {
+                menu.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

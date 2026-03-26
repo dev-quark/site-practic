@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления - PC Builder</title>
+    <style>
+        /* === БАЗОВЫЕ СТИЛИ === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f4f4; min-height: 100vh; }
+        
+        /* === ШАПКА === */
+        .header { background: #000; color: #fff; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .header h1 { margin: 0; color: #00d4aa; font-size: 1.4rem; }
+        .header-actions { display: flex; align-items: center; gap: 20px; }
+        .header-actions a { color: #fff; text-decoration: none; font-size: 14px; }
+        .header-actions a:hover { color: #00d4aa; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        
+        /* 🔥 АВАТАР В ШАПКЕ */
+        .header-avatar {
+            width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+            border: 2px solid #00d4aa; cursor: pointer; transition: transform 0.2s;
+            background: #333; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 600; font-size: 14px; text-transform: uppercase;
+            overflow: hidden;
+        }
+        .header-avatar:hover { transform: scale(1.1); }
+        .header-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        
+        .role-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        
+        /* === БОКОВАЯ ПАНЕЛЬ === */
+        .admin-wrapper { display: flex; min-height: calc(100vh - 60px); }
+        .sidebar { width: 240px; background: #1a1a1a; padding: 20px 0; flex-shrink: 0; }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { border-bottom: 1px solid #333; }
+        .sidebar-menu a { display: block; padding: 12px 25px; color: #ccc; text-decoration: none; font-size: 14px; transition: all 0.2s; }
+        .sidebar-menu a:hover, .sidebar-menu a.active { background: #00d4aa; color: #000; }
+        .sidebar-menu a.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+        
+        /* === ОСНОВНОЙ КОНТЕНТ === */
+        .main-content { flex: 1; padding: 25px; overflow-y: auto; }
+        .section { display: none; }
+        .section.active { display: block; }
+        .section h2 { color: #333; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #00d4aa; }
+        
+        /* === КАРТОЧКИ И ТАБЛИЦЫ === */
+        .card { background: #fff; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .data-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; vertical-align: middle; }
+        .data-table th { background: #1a1a1a; color: #fff; font-weight: 600; }
+        .data-table tr:hover { background: #f9f9f9; }
+        
+        /* === КНОПКИ === */
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-right: 5px; }
+        .btn-primary { background: #00d4aa; color: #000; }
+        .btn-primary:hover { background: #00b894; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn-warning { background: #f59e0b; color: #fff; }
+        .btn-secondary { background: #6c757d; color: #fff; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+        
+        /* === ФОРМЫ === */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; color: #555; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #00d4aa; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        /* === СТАТУСЫ === */
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-approved { background: #d1fae5; color: #065f46; }
+        .status-rejected { background: #fee2e2; color: #991b1b; }
+        
+        /* === МОДАЛЬНЫЕ ОКНА === */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 12px; max-width: 700px; width: 95%; max-height: 95vh; overflow-y: auto; }
+        .modal-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; color: #333; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; }
+        .modal-body { padding: 20px; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        
+        /* === УВЕДОМЛЕНИЯ === */
+        .alert { padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; }
+        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #22c55e; }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+        
+        /* === ЗАГРУЗКА === */
+        .loading { text-align: center; padding: 40px; color: #666; }
+        .spinner { width: 30px; height: 30px; border: 3px solid #e0e0e0; border-top-color: #00d4aa; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* === АВАТАРЫ И ИЗОБРАЖЕНИЯ === */
+        .po-avatar-img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd; margin-right: 10px; }
+        .avatar-preview { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e0e0; margin: 10px auto; display: block; }
+        
+        /* === ПОИСК === */
+        .search-box { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; width: 200px; }
+        
+        /* === КАТЕГОРИИ === */
+        .category-badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #e0e0e0; color: #333; }
+        .category-cpu { background: #ff6b6b; color: #fff; }
+        .category-gpu { background: #4ecdc4; color: #fff; }
+        .category-ram { background: #45b7d1; color: #fff; }
+        .category-storage { background: #96ceb4; color: #333; }
+        .category-psu { background: #ffeaa7; color: #333; }
+        .category-case { background: #dfe6e9; color: #333; }
+        .category-mobo { background: #a29bfe; color: #fff; }
+        .category-os { background: #6366f1; color: #fff; }
+        .category-drivers { background: #10b981; color: #fff; }
+        .category-utils { background: #f59e0b; color: #fff; }
+        .category-security { background: #ef4444; color: #fff; }
+        .category-office { background: #8b5cf6; color: #fff; }
+        .category-media { background: #ec4899; color: #fff; }
+        .category-games { background: #f97316; color: #fff; }
+        .category-browsers { background: #14b8a6; color: #fff; }
+        
+        /* === ПРЕВЬЮ СБОРКИ === */
+        .build-preview { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .build-preview-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #ddd; }
+        .build-preview-item:last-child { border-bottom: none; }
+        .build-total { font-size: 1.2rem; font-weight: 700; color: #00d4aa; margin-top: 10px; text-align: right; }
+        
+        /* === АДАПТИВНОСТЬ === */
+        @media (max-width: 900px) {
+            .admin-wrapper { flex-direction: column; }
+            .sidebar { width: 100%; padding: 10px 0; }
+            .sidebar-menu { display: flex; flex-wrap: wrap; }
+            .sidebar-menu li { border-bottom: none; border-right: 1px solid #333; }
+            .sidebar-menu a { padding: 10px 15px; font-size: 13px; }
+            .form-row { grid-template-columns: 1fr; }
+            .header-avatar { width: 32px; height: 32px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- === ШАПКА === -->
+    <header class="header">
+        <h1>🔧 Панель управления</h1>
+        <div class="header-actions">
+            <div class="user-info">
+                <!-- 🔥 АВАТАР В ШАПКЕ -->
+                <div class="header-avatar" id="headerAvatar" title="Редактировать профиль" onclick="openUserModal(currentUser)">
+                    <!-- Заполняется через JS -->
+                </div>
+                <div>
+                    <span id="adminName" style="display:block;font-weight:600;">Загрузка...</span>
+                    <span id="adminRole" class="role-badge">Пользователь</span>
+                </div>
+            </div>
+            <a href="index.html">← На сайт</a>
+            <a href="#" onclick="doLogout()">Выйти</a>
+        </div>
+    </header>
+
+    <!-- === ОСНОВНОЙ КОНТЕЙНЕР === -->
+    <div class="admin-wrapper">
+        <!-- === БОКОВОЕ МЕНЮ === -->
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active" data-section="requests" data-min-role="2">📋 Запросы</a></li>
+                <li><a href="#" data-section="po" data-min-role="3">💻 ПО</a></li>
+                <li><a href="#" data-section="components" data-min-role="3">🔧 Комплектующие</a></li>
+                <li><a href="#" data-section="builds" data-min-role="3">🎮 Сборки</a></li>
+                <li><a href="#" data-section="glossary" data-min-role="3">📚 Глоссарий</a></li>
+                <li><a href="#" data-section="users" data-min-role="4">👥 Пользователи</a></li>
+            </ul>
+        </aside>
+
+        <!-- === КОНТЕНТ === -->
+        <main class="main-content">
+            <!-- 🔥 СЕКЦИЯ: ЗАПРОСЫ === -->
+            <section id="requests" class="section active">
+                <h2>📋 Запросы пользователей</h2>
+                <div id="requestsAlert"></div>
+                <div id="requestsContainer" class="loading"><div class="spinner"></div>Загрузка...</div>
+            </section>
+            
+            <!-- 🔥 СЕКЦИЯ: ПО === -->
+            <section id="po" class="section">
+                <h2>💻 Управление ПО</h2>
+                <div id="poAlert"></div>
+                <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <select id="poCategoryFilter" onchange="loadPo()" style="padding:8px; border-radius:6px; border:1px solid #ddd;">
+                        <option value="">Все категории</option>
+                        <option value="os">ОС</option>
+                        <option value="drivers">Драйверы</option>
+                        <option value="utils">Утилиты</option>
+                        <option value="security">Безопасность</option>
+                        <option value="office">Офис</option>
+                        <option value="media">Медиа</option>
+                        <option value="games">Игры</option>
+                        <option value="browsers">Браузеры</option>
+                    </select>
+                    <input type="text" id="poSearch" class="search-box" placeholder="🔍 Поиск..." oninput="filterPo()">
+                    <button class="btn btn-primary" onclick="openPoModal()">+ Добавить ПО</button>
+                </div>
+                <div id="poContainer" class="loading"><div class="spinner"></div>Загрузка...</div>
+            </section>
+
+            <!-- 🔥 СЕКЦИЯ: КОМПЛЕКТУЮЩИЕ === -->
+            <section id="components" class="section">
+                <h2>🔧 Управление комплектующими</h2>
+                <div id="componentsAlert"></div>
+                <div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                    <select id="componentTypeFilter" onchange="loadComponents()" style="padding:8px; border-radius:6px; border:1px solid #ddd;">
+                        <option value="cpu">💻 Процессоры</option>
+                        <option value="gpu">🎮 Видеокарты</option>
+                        <option value="ram">🔌 ОЗУ</option>
+                        <option value="storage">💾 Накопители</option>
+                        <option value="psu">⚡ Блоки питания</option>
+                        <option value="case">📦 Корпуса</option>
+                        <option value="mobo">🔧 Мат. платы</option>
+                    </select>
+                    <input type="text" id="componentSearch" class="search-box" placeholder="🔍 Поиск по названию..." oninput="filterComponents()">
+                    <button class="btn btn-primary" onclick="openComponentModal()">+ Добавить компонент</button>
+                    <button class="btn btn-secondary" onclick="loadComponents()">🔄 Обновить</button>
+                </div>
+                <div id="componentsContainer" class="loading"><div class="spinner"></div>Загрузка...</div>
+            </section>
+
+            <!-- 🔥 СЕКЦИЯ: СБОРКИ === -->
+            <section id="builds" class="section">
+                <h2>🎮 Управление сборками ПК</h2>
+                <div id="buildsAlert"></div>
+                <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <select id="buildCategoryFilter" onchange="loadBuilds()" style="padding:8px; border-radius:6px; border:1px solid #ddd;">
+                        <option value="">Все категории</option>
+                        <option value="gaming">🎮 Игровые</option>
+                        <option value="work">💼 Для работы</option>
+                        <option value="budget">💰 Бюджетные</option>
+                        <option value="pro">⚡ Профессиональные</option>
+                    </select>
+                    <input type="text" id="buildSearch" class="search-box" placeholder="🔍 Поиск..." oninput="filterBuilds()">
+                    <button class="btn btn-primary" onclick="openBuildModal()">+ Добавить сборку</button>
+                </div>
+                <div id="buildsContainer" class="loading"><div class="spinner"></div>Загрузка...</div>
+            </section>
+
+            <!-- 🔥 СЕКЦИЯ: ГЛОССАРИЙ === -->
+            <section id="glossary" class="section">
+                <h2>📚 Управление глоссарием</h2>
+                <div id="glossaryAlert"></div>
+                <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <select id="glossaryCategoryFilter" onchange="loadGlossary()" style="padding:8px; border-radius:6px; border:1px solid #ddd;">
+                        <option value="">Все категории</option>
+                        <option value="general">Общее</option>
+                        <option value="hardware">Железо</option>
+                        <option value="software">ПО</option>
+                        <option value="networking">Сети</option>
+                    </select>
+                    <input type="text" id="glossarySearch" class="search-box" placeholder="🔍 Поиск термина..." oninput="filterGlossary()">
+                    <button class="btn btn-primary" onclick="openGlossaryModal()">+ Добавить термин</button>
+                </div>
+                <div id="glossaryContainer" class="loading"><div class="spinner"></div>Загрузка...</div>
+            </section>
+
+            <!-- 🔥 СЕКЦИЯ: ПОЛЬЗОВАТЕЛИ === -->
+            <section id="users" class="section">
+                <h2>👥 Управление пользователями</h2>
+                <div id="usersAlert"></div>
+                <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <select id="userRoleFilter" onchange="loadUsers()" style="padding:8px; border-radius:6px; border:1px solid #ddd;">
+                        <option value="">Все роли</option>
+                        <option value="1">Пользователь</option>
+                        <option value="2">Сборщик</option>
+                        <option value="3">Администратор</option>
+                        <option value="4">Разработчик</option>
+                    </select>
+                    <input type="text" id="userSearch" class="search-box" placeholder="🔍 Поиск..." oninput="filterUsers()">
+                </div>
+                <div id="usersContainer" class="loading"><div class="spinner"></div>Загрузка...</div>
+            </section>
+        </main>
+    </div>
+
+    <!-- === МОДАЛКИ === -->
+
+    <!-- 🔥 ПО: ФОРМА С ПОЛЯМИ === -->
+    <div class="modal" id="poModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="poModalTitle">Добавить ПО</h3>
+                <button class="modal-close" onclick="closeModal('poModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="poForm">
+                    <input type="hidden" id="poId">
+                    <input type="hidden" id="poImageHidden">
+                    
+                    <div class="form-group">
+                        <label>ID *</label>
+                        <input type="text" id="poIdInput" required pattern="^[A-Za-z0-9\-_]+$" placeholder="win11, cpu-z">
+                    </div>
+                    <div class="form-group">
+                        <label>Название *</label>
+                        <input type="text" id="poName" required placeholder="Windows 11" oninput="generatePoId()">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Категория *</label>
+                            <select id="poCategory" required>
+                                <option value="os">🪟 ОС</option>
+                                <option value="drivers">🔧 Драйверы</option>
+                                <option value="utils">🛠️ Утилиты</option>
+                                <option value="security">🔐 Безопасность</option>
+                                <option value="office">📄 Офис</option>
+                                <option value="media">🎬 Медиа</option>
+                                <option value="games">🎮 Игры</option>
+                                <option value="browsers">🌐 Браузеры</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ссылка *</label>
+                            <input type="url" id="poLink" required placeholder="https://...">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Изображение</label>
+                        <input type="file" id="poFileInput" accept="image/*" onchange="previewPoImage(this)">
+                        <input type="url" id="poImageUrl" placeholder="Или URL изображения" style="margin-top: 5px;">
+                        <img id="poImagePreview" class="avatar-preview" style="display:none;">
+                    </div>
+                    <div class="form-group">
+                        <label>Описание</label>
+                        <textarea id="poDesc" rows="3" placeholder="Краткое описание"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('poModal')">Отмена</button>
+                <button class="btn btn-primary" onclick="savePo()">💾 Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 КОМПОНЕНТ: ДИНАМИЧЕСКИЕ ПОЛЯ === -->
+    <div class="modal" id="componentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="componentModalTitle">Добавить компонент</h3>
+                <button class="modal-close" onclick="closeModal('componentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="componentForm">
+                    <input type="hidden" id="componentId">
+                    
+                    <div class="form-group">
+                        <label>Название *</label>
+                        <input type="text" id="componentName" required placeholder="AMD Ryzen 5 7500F" oninput="generateComponentId()">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Категория *</label>
+                            <select id="componentCategory" required onchange="updateComponentForm()">
+                                <option value="cpu">💻 Процессор</option>
+                                <option value="gpu">🎮 Видеокарта</option>
+                                <option value="ram">🔌 ОЗУ</option>
+                                <option value="storage">💾 Накопитель</option>
+                                <option value="psu">⚡ Блок питания</option>
+                                <option value="case">📦 Корпус</option>
+                                <option value="mobo">🔧 Мат. плата</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Бренд</label>
+                            <input type="text" id="componentBrand" placeholder="AMD, NVIDIA, Intel">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Цена (₽) *</label>
+                            <input type="number" id="componentPrice" required min="0" placeholder="14990">
+                        </div>
+                        <div class="form-group">
+                            <label>Изображение</label>
+                            <input type="url" id="componentImage" placeholder="https://...">
+                        </div>
+                    </div>
+                    
+                    <!-- 🔥 ДИНАМИЧЕСКИЕ ПОЛЯ ХАРАКТЕРИСТИК -->
+                    <div id="specsFields"></div>
+                    
+                    <div class="form-group">
+                        <label>Описание</label>
+                        <textarea id="componentDesc" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('componentModal')">Отмена</button>
+                <button class="btn btn-primary" onclick="saveComponent()">💾 Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 СБОРКА: ФОРМА С ВЫБОРОМ КОМПОНЕНТОВ === -->
+    <div class="modal" id="buildModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="buildModalTitle">Добавить сборку</h3>
+                <button class="modal-close" onclick="closeModal('buildModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="buildForm">
+                    <input type="hidden" id="buildId">
+                    
+                    <div class="form-group">
+                        <label>Название сборки *</label>
+                        <input type="text" id="buildTitle" required placeholder="Игровой ПК за 60 000₽">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Категория *</label>
+                            <select id="buildCategory" required>
+                                <option value="gaming">🎮 Игровая</option>
+                                <option value="work">💼 Для работы</option>
+                                <option value="budget">💰 Бюджетная</option>
+                                <option value="pro">⚡ Профессиональная</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Цена (₽) *</label>
+                            <input type="number" id="buildPrice" required min="0" placeholder="59990">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Описание</label>
+                        <textarea id="buildDesc" rows="3" placeholder="Краткое описание сборки..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Изображение</label>
+                        <input type="url" id="buildImage" placeholder="https://...">
+                    </div>
+                    
+                    <!-- 🔥 ВЫБОР КОМПОНЕНТОВ -->
+                    <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #eee;">
+                        <h4 style="margin-bottom: 15px;">🔧 Компоненты сборки</h4>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>💻 Процессор</label>
+                                <input type="text" id="compCpu" list="cpuList" placeholder="Выберите или введите">
+                                <datalist id="cpuList"></datalist>
+                            </div>
+                            <div class="form-group">
+                                <label>🎮 Видеокарта</label>
+                                <input type="text" id="compGpu" list="gpuList" placeholder="Выберите или введите">
+                                <datalist id="gpuList"></datalist>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>🔌 ОЗУ</label>
+                                <input type="text" id="compRam" list="ramList" placeholder="Выберите или введите">
+                                <datalist id="ramList"></datalist>
+                            </div>
+                            <div class="form-group">
+                                <label>💾 Накопитель</label>
+                                <input type="text" id="compStorage" list="storageList" placeholder="Выберите или введите">
+                                <datalist id="storageList"></datalist>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>⚡ Блок питания</label>
+                                <input type="text" id="compPsu" list="psuList" placeholder="Выберите или введите">
+                                <datalist id="psuList"></datalist>
+                            </div>
+                            <div class="form-group">
+                                <label>📦 Корпус</label>
+                                <input type="text" id="compCase" list="caseList" placeholder="Выберите или введите">
+                                <datalist id="caseList"></datalist>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>🔧 Материнская плата</label>
+                            <input type="text" id="compMobo" list="moboList" placeholder="Выберите или введите">
+                            <datalist id="moboList"></datalist>
+                        </div>
+                    </div>
+                    
+                    <!-- 🔥 ПРЕВЬЮ СБОРКИ -->
+                    <div class="build-preview">
+                        <small style="color: #666; display: block; margin-bottom: 10px;">📋 Предпросмотр:</small>
+                        <div id="buildPreview"></div>
+                        <div class="build-total" id="buildTotal">Итого: 0 ₽</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('buildModal')">Отмена</button>
+                <button class="btn btn-primary" onclick="saveBuild()">💾 Сохранить сборку</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 ГЛОССАРИЙ: ПРОСТАЯ ФОРМА === -->
+    <div class="modal" id="glossaryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="glossaryModalTitle">Добавить термин</h3>
+                <button class="modal-close" onclick="closeModal('glossaryModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="glossaryForm">
+                    <input type="hidden" id="glossaryId">
+                    <div class="form-group">
+                        <label>Термин *</label>
+                        <input type="text" id="glossaryTerm" required placeholder="TDP, PCIe, DDR5">
+                    </div>
+                    <div class="form-group">
+                        <label>Определение *</label>
+                        <textarea id="glossaryDef" rows="4" required placeholder="Thermal Design Power — показатель тепловыделения..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Категория</label>
+                        <select id="glossaryCategory">
+                            <option value="general">Общее</option>
+                            <option value="hardware">Железо</option>
+                            <option value="software">ПО</option>
+                            <option value="networking">Сети</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('glossaryModal')">Отмена</button>
+                <button class="btn btn-primary" onclick="saveGlossary()">💾 Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 ПОЛЬЗОВАТЕЛЬ: ПОЛНОЕ РЕДАКТИРОВАНИЕ === -->
+    <div class="modal" id="userModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Редактировать пользователя</h3>
+                <button class="modal-close" onclick="closeModal('userModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="editUserId">
+                    
+                    <div class="form-group">
+                        <label>Имя пользователя *</label>
+                        <input type="text" id="editUserName" disabled style="background: #f0f0f0;">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Никнейм</label>
+                            <input type="text" id="editNickname" placeholder="Отображаемое имя">
+                        </div>
+                        <div class="form-group">
+                            <label>Роль *</label>
+                            <select id="editUserRole" required>
+                                <option value="1">👤 Пользователь</option>
+                                <option value="2">🔧 Сборщик</option>
+                                <option value="3">🛡️ Администратор</option>
+                                <option value="4">⚙️ Разработчик</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="editUserEmail" placeholder="user@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Телефон</label>
+                            <input type="tel" id="editUserPhone" placeholder="+7 (999) 123-45-67">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Аватар</label>
+                        <input type="file" id="editUserAvatar" accept="image/*" onchange="previewUserAvatar(this)">
+                        <input type="url" id="editUserAvatarUrl" placeholder="Или URL" style="margin-top: 5px;">
+                        <img id="editUserAvatarPreview" class="avatar-preview" style="display:none;">
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="resetUserAvatar()" style="margin-top: 5px;">🔄 Сбросить</button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="deleteUserFromModal()">🗑️ Удалить</button>
+                <button class="btn btn-secondary" onclick="closeModal('userModal')">Отмена</button>
+                <button class="btn btn-primary" onclick="saveUser()">💾 Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- === СКРИПТЫ === -->
+    <script src="auth.js"></script>
+    <script>
+        // === КОНФИГУРАЦИЯ ===
+        const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://127.0.0.1:10000/api'
+            : 'https://forgepower.рит.online/api';
+
+        let currentUser = null;
+        let currentData = { requests: [], po: [], components: {}, builds: [], glossary: [], users: [] };
+        let allComponents = {}; // Для автодополнения в сборках
+
+        // === УТИЛИТЫ ===
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            return match ? decodeURIComponent(match[2]) : null;
+        }
+        function deleteCookie(name) { document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`; }
+        function getToken() { return getCookie(window.TOKEN_KEY) || ''; }
+        function getHeaders() {
+            const token = getToken();
+            return { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' };
+        }
+        function showAlert(containerId, message, type) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+                setTimeout(() => { container.innerHTML = ''; }, 5000);
+            }
+        }
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) { modal.classList.remove('active'); }
+        }
+        function doLogout() {
+            deleteCookie(window.TOKEN_KEY); deleteCookie(window.USERNAME_KEY);
+            window.location.href = 'index.html';
+        }
+        function getRoleName(roleId) {
+            const roles = { 1: 'Пользователь', 2: 'Сборщик', 3: 'Администратор', 4: 'Разработчик' };
+            return roles[roleId] || 'Пользователь';
+        }
+        function getCategoryName(cat, section = 'components') {
+            if (section === 'po') {
+                const names = { os: '🪟 ОС', drivers: '🔧 Драйверы', utils: '🛠️ Утилиты', security: '🔐 Безопасность', office: '📄 Офис', media: '🎬 Медиа', games: '🎮 Игры', browsers: '🌐 Браузеры' };
+                return names[cat] || cat;
+            }
+            const names = { cpu: '💻 CPU', gpu: '🎮 GPU', ram: '🔌 RAM', storage: '💾 Storage', psu: '⚡ PSU', case: '📦 Case', mobo: '🔧 Mobo' };
+            return names[cat] || cat;
+        }
+        function getCategoryClass(cat) { return `category-${cat}`; }
+
+        // 🔥 Генерация ID из названия
+        function generatePoId() {
+            const name = document.getElementById('poName').value.trim();
+            const idInput = document.getElementById('poIdInput');
+            if (!idInput.value || idInput.value.startsWith('auto_')) {
+                if (name) {
+                    const translit = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+                    idInput.value = translit || 'auto_' + Date.now();
+                }
+            }
+        }
+        function generateComponentId() {
+            const name = document.getElementById('componentName').value.trim();
+            const idInput = document.getElementById('componentId');
+            if (!idInput.value || idInput.value.startsWith('auto_')) {
+                if (name) {
+                    const translit = name.toLowerCase()
+                        .replace(/а/g,'a').replace(/б/g,'b').replace(/в/g,'v').replace(/г/g,'g').replace(/д/g,'d')
+                        .replace(/е/g,'e').replace(/ё/g,'yo').replace(/ж/g,'zh').replace(/з/g,'z').replace(/и/g,'i')
+                        .replace(/й/g,'y').replace(/к/g,'k').replace(/л/g,'l').replace(/м/g,'m').replace(/н/g,'n')
+                        .replace(/о/g,'o').replace(/п/g,'p').replace(/р/g,'r').replace(/с/g,'s').replace(/т/g,'t')
+                        .replace(/у/g,'u').replace(/ф/g,'f').replace(/х/g,'h').replace(/ц/g,'ts').replace(/ч/g,'ch')
+                        .replace(/ш/g,'sh').replace(/щ/g,'sch').replace(/ъ/g,'').replace(/ы/g,'y').replace(/ь/g,'')
+                        .replace(/э/g,'e').replace(/ю/g,'yu').replace(/я/g,'ya')
+                        .replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+                    idInput.value = translit || 'auto_' + Date.now();
+                }
+            }
+        }
+
+        // 🔥 Превью изображений
+        function previewPoImage(input) {
+            const preview = document.getElementById('poImagePreview');
+            const hiddenInput = document.getElementById('poImageHidden');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result; preview.style.display = 'block';
+                    hiddenInput.value = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        function previewUserAvatar(input) {
+            const preview = document.getElementById('editUserAvatarPreview');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result; preview.style.display = 'block';
+                    updateHeaderAvatar(e.target.result);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        function resetUserAvatar() {
+            document.getElementById('editUserAvatarPreview').style.display = 'none';
+            document.getElementById('editUserAvatar').value = '';
+            document.getElementById('editUserAvatarUrl').value = '';
+            if (currentUser) updateHeaderAvatar(currentUser.user_img);
+        }
+
+        // 🔥 ОБНОВЛЕНИЕ АВАТАРА В ШАПКЕ
+        function updateHeaderAvatar(avatarUrl) {
+            const avatarEl = document.getElementById('headerAvatar');
+            if (!avatarEl) return;
+            
+            if (avatarUrl) {
+                avatarEl.innerHTML = `<img src="${avatarUrl}" alt="Avatar" onerror="this.parentElement.innerHTML='${(currentUser?.nickname || currentUser?.user_name || 'U').charAt(0)}'">`;
+            } else {
+                const initial = (currentUser?.nickname || currentUser?.user_name || 'U').charAt(0).toUpperCase();
+                avatarEl.innerHTML = initial;
+                avatarEl.style.background = '#00d4aa';
+            }
+        }
+
+        // === ИНИЦИАЛИЗАЦИЯ ===
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!isAuthenticated()) { window.location.href = 'login.html'; return; }
+            const username = getCurrentUsername();
+            if (!username) { doLogout(); return; }
+            try {
+                currentUser = await fetchProfile(username);
+                if (!currentUser || currentUser.role < 2) { alert('Доступ запрещён'); doLogout(); return; }
+                
+                // Отображение имени и роли
+                document.getElementById('adminName').textContent = currentUser.nickname || currentUser.user_name;
+                const roleConfig = window.ROLES_CONFIG?.[currentUser.role] || { name: 'User', color: '#6b7280' };
+                const badge = document.getElementById('adminRole');
+                badge.textContent = roleConfig.name;
+                badge.style.background = roleConfig.color + '20';
+                badge.style.color = roleConfig.color;
+                badge.style.borderColor = roleConfig.color;
+                
+                // Отображение аватара в шапке
+                updateHeaderAvatar(currentUser.user_img);
+                
+                setupMenuByRole(currentUser.role);
+                attachMenuListeners();
+                loadActiveSection();
+                loadAllComponentsForBuilds();
+            } catch (error) { console.error('Init error:', error); doLogout(); }
+        });
+
+        function setupMenuByRole(role) {
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                const minRole = parseInt(link.dataset.minRole);
+                if (role < minRole) { link.classList.add('disabled'); link.title = `Требуется роль: ${getRoleName(minRole)}`; }
+                else { link.classList.remove('disabled'); }
+            });
+        }
+        function attachMenuListeners() {
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    if (link.classList.contains('disabled')) { alert(`Требуется роль: ${link.title.replace('Требуется роль: ', '')}`); return; }
+                    document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+                    link.classList.add('active');
+                    switchSection(link.dataset.section);
+                };
+            });
+        }
+        function switchSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(sectionId);
+            if (target) { target.classList.add('active'); loadActiveSection(); }
+        }
+        function loadActiveSection() {
+            const active = document.querySelector('.section.active');
+            if (!active) return;
+            const id = active.id;
+            if (id === 'requests') loadRequests();
+            else if (id === 'po') loadPo();
+            else if (id === 'components') loadComponents();
+            else if (id === 'builds') loadBuilds();
+            else if (id === 'glossary') loadGlossary();
+            else if (id === 'users') loadUsers();
+        }
+
+        // === 🔥 ЗАПРОСЫ ===
+        async function loadRequests() {
+            const container = document.getElementById('requestsContainer');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            try {
+                const r = await fetch(`${API_BASE}/admin/requests`, { headers: getHeaders() });
+                if (!r.ok) throw new Error(r.statusText);
+                currentData.requests = await r.json();
+                renderRequests();
+            } catch (e) { container.innerHTML = `<p style="color:red">❌ Ошибка: ${e.message}</p>`; }
+        }
+        function renderRequests() {
+            const container = document.getElementById('requestsContainer');
+            const requests = currentData.requests;
+            if (!requests || requests.length === 0) { container.innerHTML = '<p>Запросов пока нет</p>'; return; }
+            container.innerHTML = `
+                <table class="data-table">
+                    <thead><tr><th>Дата</th><th>Пользователь</th><th>Тип</th><th>Тема</th><th>Бюджет</th><th>Статус</th><th>Действия</th></tr></thead>
+                    <tbody>${requests.map(req => {
+                        const reqId = req._id || req.id || '';
+                        if (!reqId) return '';
+                        return `<tr>
+                            <td>${new Date(req.created_at || Date.now()).toLocaleDateString('ru-RU')}</td>
+                            <td><strong>${req.user_name}</strong><br><small>${req.user_email || ''}</small></td>
+                            <td>${getRequestTypeName(req.request_type)}</td>
+                            <td>${req.title}<br><small style="color:#666">${(req.description||'').substring(0,30)}...</small></td>
+                            <td>${req.budget ? req.budget.toLocaleString('ru-RU') + ' ₽' : '—'}</td>
+                            <td><span class="status-badge status-${req.status || 'pending'}">${getStatusName(req.status || 'pending')}</span></td>
+                            <td>${req.status === 'pending' ? `<button class="btn btn-sm btn-success" onclick="updateRequest('${reqId}', 'approved')">✓</button><button class="btn btn-sm btn-danger" onclick="updateRequest('${reqId}', 'rejected')">✗</button>` : `<small style="color:#666">${req.admin_comment || '—'}</small>`}
+                            <button class="btn btn-sm btn-secondary" onclick="viewRequest('${reqId}')">👁️</button></td>
+                        </tr>`;
+                    }).filter(Boolean).join('')}</tbody>
+                </table>`;
+        }
+        function getRequestTypeName(type) {
+            const names = { new_build: '🆕 Новая сборка', edit_build: '✏️ Изменение', component_request: '🔧 Компонент', order: '📦 Заказ' };
+            return names[type] || type;
+        }
+        function getStatusName(status) {
+            const names = { pending: '⏳ На рассмотрении', approved: '✅ Одобрено', rejected: '❌ Отклонено' };
+            return names[status] || status;
+        }
+        async function updateRequest(requestId, status) {
+            const comment = prompt('💬 Комментарий администратора:') || '';
+            try {
+                const r = await fetch(`${API_BASE}/admin/requests/${requestId}?status=${status}&admin_comment=${encodeURIComponent(comment)}`, { method: 'PUT', headers: getHeaders() });
+                if (!r.ok) throw new Error('Ошибка');
+                showAlert('requestsAlert', `✅ Запрос ${status === 'approved' ? 'одобрен' : 'отклонён'}`, 'success');
+                loadRequests();
+            } catch (e) { showAlert('requestsAlert', `❌ Ошибка: ${e.message}`, 'error'); }
+        }
+        function viewRequest(requestId) {
+            const req = currentData.requests.find(r => (r._id || r.id) === requestId);
+            if (!req) { alert('❌ Запрос не найден'); return; }
+            alert(`📋 Запрос #${requestId}\n\n👤 ${req.user_name}\n📧 ${req.user_email || '—'}\n📞 ${req.user_phone || '—'}\n\n🔧 Тип: ${getRequestTypeName(req.request_type)}\n📝 ${req.title}\n\n💬 Описание:\n${req.description || '—'}\n\n💰 Бюджет: ${req.budget ? req.budget.toLocaleString('ru-RU') + ' ₽' : 'не указан'}`);
+        }
+
+        // === 🔥 ПО: ВСЕ КАТЕГОРИИ + ФОРМА ===
+        async function loadPo() {
+            const c = document.getElementById('poContainer');
+            c.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            try {
+                const r = await fetch(`${API_BASE}/admin/po`, { headers: getHeaders() });
+                if (!r.ok) throw new Error(r.statusText);
+                currentData.po = await r.json();
+                renderPo();
+            } catch (e) { c.innerHTML = `<p style="color:red">❌ Ошибка: ${e.message}</p>`; }
+        }
+        function renderPo() {
+            const c = document.getElementById('poContainer');
+            const filter = document.getElementById('poCategoryFilter').value;
+            const search = document.getElementById('poSearch').value.toLowerCase();
+            let po = currentData.po;
+            if (filter) po = po.filter(p => p.category === filter);
+            if (search) po = po.filter(p => (p.name || '').toLowerCase().includes(search));
+            if (!po.length) { c.innerHTML = '<p>ПО не найдено</p>'; return; }
+            c.innerHTML = `<table class="data-table"><thead><tr><th>Фото</th><th>ID</th><th>Название</th><th>Категория</th><th>Действия</th></tr></thead><tbody>
+                ${po.map(p => `
+                    <tr>
+                        <td>${p.image ? `<img src="${p.image}" class="po-avatar-img">` : '📦'}</td>
+                        <td><code>${p.id}</code></td>
+                        <td>${p.name}</td>
+                        <td><span class="category-badge ${getCategoryClass(p.category)}">${getCategoryName(p.category, 'po')}</span></td>
+                        <td><button class="btn btn-sm btn-primary" onclick="editPo('${p.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deletePo('${p.id}')">🗑️</button></td>
+                    </tr>
+                `).join('')}
+            </tbody></table>`;
+        }
+        function filterPo() { renderPo(); }
+        function openPoModal(po = null) {
+            document.getElementById('poModalTitle').textContent = po ? 'Редактировать ПО' : 'Добавить ПО';
+            document.getElementById('poId').value = po?.id || '';
+            document.getElementById('poIdInput').value = po?.id || '';
+            document.getElementById('poName').value = po?.name || '';
+            document.getElementById('poCategory').value = po?.category || 'os';
+            document.getElementById('poLink').value = po?.link || '';
+            document.getElementById('poDesc').value = po?.description || '';
+            document.getElementById('poImageHidden').value = po?.image || '';
+            document.getElementById('poImageUrl').value = po?.image?.startsWith('http') ? po.image : '';
+            const preview = document.getElementById('poImagePreview');
+            if (po?.image) { preview.src = po.image; preview.style.display = 'block'; } else { preview.style.display = 'none'; }
+            document.getElementById('poIdInput').disabled = !!po;
+            document.getElementById('poModal').classList.add('active');
+        }
+        async function savePo() {
+            const id = document.getElementById('poId').value;
+            const name = document.getElementById('poName').value.trim();
+            let finalId = document.getElementById('poIdInput').value.trim();
+            if (!finalId && name) finalId = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+            if (!finalId) { alert('❌ Укажите ID или Название'); return; }
+            const image = document.getElementById('poImageHidden').value || document.getElementById('poImageUrl').value.trim() || null;
+            const data = { id: finalId, name, category: document.getElementById('poCategory').value, link: document.getElementById('poLink').value, description: document.getElementById('poDesc').value, image };
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `${API_BASE}/admin/po/${id}` : `${API_BASE}/admin/po`;
+                const r = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(data) });
+                if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err.detail || 'Ошибка'); }
+                closeModal('poModal'); showAlert('poAlert', '✅ ПО сохранено', 'success'); loadPo();
+            } catch (e) { showAlert('poAlert', `❌ Ошибка: ${e.message}`, 'error'); }
+        }
+        async function deletePo(poId) {
+            if (!confirm('Удалить это ПО?')) return;
+            try {
+                await fetch(`${API_BASE}/admin/po/${poId}`, { method: 'DELETE', headers: getHeaders() });
+                showAlert('poAlert', '✅ ПО удалено', 'success'); loadPo();
+            } catch (e) { showAlert('poAlert', `❌ Ошибка: ${e.message}`, 'error'); }
+        }
+        function editPo(poId) { const po = currentData.po.find(p => p.id === poId); if (po) openPoModal(po); }
+
+        // === 🔥 КОМПЛЕКТУЮЩИЕ: ДИНАМИЧЕСКИЕ ПОЛЯ ===
+        const componentFields = {
+            cpu: [
+                { key: 'socket', label: 'Сокет', placeholder: 'AM5, LGA1700' },
+                { key: 'cores', label: 'Ядра', placeholder: '6', type: 'number' },
+                { key: 'threads', label: 'Потоки', placeholder: '12', type: 'number' },
+                { key: 'base_clock', label: 'Баз. частота', placeholder: '3.7 GHz' },
+                { key: 'boost_clock', label: 'Макс. частота', placeholder: '5.0 GHz' },
+                { key: 'tdp', label: 'TDP', placeholder: '65W' }
+            ],
+            gpu: [
+                { key: 'memory', label: 'Память', placeholder: '8GB' },
+                { key: 'memory_type', label: 'Тип памяти', placeholder: 'GDDR6' },
+                { key: 'cuda_cores', label: 'CUDA ядра', placeholder: '3072', type: 'number' },
+                { key: 'boost_clock', label: 'Частота', placeholder: '2.5 GHz' },
+                { key: 'tdp', label: 'TDP', placeholder: '170W' }
+            ],
+            ram: [
+                { key: 'capacity', label: 'Объём', placeholder: '16GB' },
+                { key: 'type', label: 'Тип', placeholder: 'DDR5' },
+                { key: 'speed', label: 'Частота', placeholder: '6000MHz' },
+                { key: 'timings', label: 'Тайминги', placeholder: 'CL30' },
+                { key: 'voltage', label: 'Напряжение', placeholder: '1.35V' }
+            ],
+            storage: [
+                { key: 'capacity', label: 'Объём', placeholder: '1TB' },
+                { key: 'type', label: 'Тип', placeholder: 'NVMe SSD' },
+                { key: 'interface', label: 'Интерфейс', placeholder: 'PCIe 4.0' },
+                { key: 'read_speed', label: 'Чтение', placeholder: '7000 MB/s' },
+                { key: 'write_speed', label: 'Запись', placeholder: '6000 MB/s' }
+            ],
+            psu: [
+                { key: 'power', label: 'Мощность', placeholder: '650W' },
+                { key: 'certification', label: 'Сертификат', placeholder: '80+ Bronze' },
+                { key: 'modular', label: 'Модульный', placeholder: 'Да/Нет', type: 'select', options: ['Да', 'Нет'] },
+                { key: 'fan_size', label: 'Размер вентилятора', placeholder: '120mm' }
+            ],
+            case: [
+                { key: 'form_factor', label: 'Форм-фактор', placeholder: 'ATX' },
+                { key: 'material', label: 'Материал', placeholder: 'Steel' },
+                { key: 'fans_included', label: 'Вентиляторы в комплекте', placeholder: '2', type: 'number' },
+                { key: 'usb_ports', label: 'USB порты', placeholder: '2x USB 3.0' },
+                { key: 'max_gpu_length', label: 'Макс. длина видеокарты', placeholder: '330mm' }
+            ],
+            mobo: [
+                { key: 'socket', label: 'Сокет', placeholder: 'AM5' },
+                { key: 'chipset', label: 'Чипсет', placeholder: 'B650' },
+                { key: 'form_factor', label: 'Форм-фактор', placeholder: 'ATX' },
+                { key: 'ram_slots', label: 'Слоты ОЗУ', placeholder: '4', type: 'number' },
+                { key: 'max_ram', label: 'Макс. ОЗУ', placeholder: '128GB' },
+                { key: 'pcie_slots', label: 'PCIe слоты', placeholder: '3' }
+            ]
+        };
+
+        function updateComponentForm() {
+            const category = document.getElementById('componentCategory').value;
+            const container = document.getElementById('specsFields');
+            const fields = componentFields[category] || [];
+            container.innerHTML = `<div class="form-group"><label>Характеристики</label><div class="form-row">${fields.map(f => {
+                if (f.type === 'select') {
+                    return `<div class="form-group"><label>${f.label}</label><select id="spec_${f.key}">${f.options.map(o => `<option value="${o}">${o}</option>`).join('')}</select></div>`;
+                }
+                return `<div class="form-group"><label>${f.label}</label><input type="${f.type || 'text'}" id="spec_${f.key}" placeholder="${f.placeholder}"></div>`;
+            }).join('')}</div></div>`;
+        }
+
+        async function loadComponents() {
+            const type = document.getElementById('componentTypeFilter').value;
+            const c = document.getElementById('componentsContainer');
+            c.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            try {
+                const r = await fetch(`${API_BASE}/admin/components/${type}`, { headers: getHeaders() });
+                if (!r.ok) throw new Error(r.statusText);
+                currentData.components[type] = await r.json();
+                renderComponents(type);
+                document.getElementById('componentSearch').value = '';
+            } catch (e) { c.innerHTML = `<p style="color:red">❌ Ошибка: ${e.message}</p>`; }
+        }
+        function renderComponents(type) {
+            const container = document.getElementById('componentsContainer');
+            const components = currentData.components[type] || [];
+            const search = document.getElementById('componentSearch').value.toLowerCase();
+            const filtered = components.filter(c => !search || (c.model_name || '').toLowerCase().includes(search));
+            if (!filtered.length) { container.innerHTML = search ? '<p>🔍 Ничего не найдено</p>' : '<p>Компоненты не добавлены</p>'; return; }
+            container.innerHTML = `
+                <table class="data-table">
+                    <thead><tr><th>Фото</th><th>ID</th><th>Название</th><th>Бренд</th><th>Цена</th><th>Действия</th></tr></thead>
+                    <tbody>${filtered.map(comp => `
+                        <tr>
+                            <td>${comp.image ? `<img src="${comp.image}" class="po-avatar-img">` : '📦'}</td>
+                            <td><code>${comp.id}</code></td>
+                            <td><strong>${comp.model_name}</strong><br><span class="category-badge ${getCategoryClass(type)}">${getCategoryName(type)}</span></td>
+                            <td>${comp.brand || '—'}</td>
+                            <td>${(comp.price_rub || comp.price || 0).toLocaleString('ru-RU')} ₽</td>
+                            <td><button class="btn btn-sm btn-primary" onclick="editComponent('${type}', '${comp.id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteComponent('${type}', '${comp.id}')">🗑️</button></td>
+                        </tr>
+                    `).join('')}</tbody>
+                </table>`;
+        }
+        function filterComponents() { renderComponents(document.getElementById('componentTypeFilter').value); }
+        function openComponentModal(type = 'cpu', component = null) {
+            const modal = document.getElementById('componentModal');
+            if (!modal) { console.error('❌ Модалка не найдена'); return; }
+            const el = {
+                title: document.getElementById('componentModalTitle'), id: document.getElementById('componentId'),
+                category: document.getElementById('componentCategory'), name: document.getElementById('componentName'),
+                brand: document.getElementById('componentBrand'), price: document.getElementById('componentPrice'),
+                image: document.getElementById('componentImage'), specs: document.getElementById('componentSpecs'),
+                desc: document.getElementById('componentDesc')
+            };
+            for (const [key, value] of Object.entries(el)) { if (!value) { console.error(`❌ Элемент #component${key} не найден`); return; } }
+            el.title.textContent = component ? 'Редактировать компонент' : 'Добавить компонент';
+            el.id.value = component?.id || ''; el.category.value = component?.category || type;
+            el.name.value = component?.model_name || ''; el.brand.value = component?.brand || '';
+            el.price.value = component?.price_rub || component?.price || ''; el.image.value = component?.image || '';
+            el.desc.value = component?.description || '';
+            if (component) {
+                const exclude = ['_id','id','model_name','brand','price','price_rub','image','description','category'];
+                const specs = {}; for (const [k, v] of Object.entries(component)) { if (!exclude.includes(k) && v !== null && v !== undefined) specs[k] = v; }
+                el.specs.value = Object.keys(specs).length ? JSON.stringify(specs, null, 2) : '';
+            } else { el.specs.value = ''; }
+            el.id.disabled = !!component; updateComponentForm(); modal.classList.add('active');
+        }
+        function collectComponentSpecs() {
+            const category = document.getElementById('componentCategory').value;
+            const fields = componentFields[category] || [];
+            const specs = {};
+            fields.forEach(f => {
+                const input = document.getElementById(`spec_${f.key}`);
+                if (input && input.value.trim()) specs[f.key] = f.type === 'number' ? parseFloat(input.value) : input.value;
+            });
+            return specs;
+        }
+        async function saveComponent() {
+            const type = document.getElementById('componentCategory').value;
+            const id = document.getElementById('componentId').value;
+            const name = document.getElementById('componentName').value.trim();
+            const price = parseInt(document.getElementById('componentPrice').value);
+            if (!name) { alert('❌ Укажите название'); return; }
+            if (!price || price < 0) { alert('❌ Укажите корректную цену'); return; }
+            const specs = collectComponentSpecs();
+            const data = {
+                id: id || name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-'),
+                model_name: name, brand: document.getElementById('componentBrand').value.trim(),
+                price_rub: price, image: document.getElementById('componentImage').value.trim() || null,
+                description: document.getElementById('componentDesc').value.trim() || null,
+                category: type, ...specs
+            };
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `${API_BASE}/admin/components/${type}/${id}` : `${API_BASE}/admin/components/${type}`;
+                const r = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(data) });
+                if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err.detail || 'Ошибка'); }
+                closeModal('componentModal'); showAlert('componentsAlert', '✅ Компонент сохранён', 'success'); loadComponents();
+            } catch (e) { showAlert('componentsAlert', `❌ Ошибка: ${e.message}`, 'error'); }
+        }
+        function editComponent(type, componentId) {
+            const comp = (currentData.components[type] || []).find(c => c.id === componentId);
+            if (comp) openComponentModal(type, comp);
+        }
+        async function deleteComponent(type, id) {
+            if (!confirm('Удалить этот компонент?')) return;
+            try {
+                await fetch(`${API_BASE}/admin/components/${type}/${id}`, { method: 'DELETE', headers: getHeaders() });
+                showAlert('componentsAlert', '✅ Компонент удалён', 'success'); loadComponents();
+            } catch (e) { showAlert('componentsAlert', `❌ Ошибка: ${e.message}`, 'error'); }
+        }
+
+        // === 🔥 СБОРКИ: ПОЛНАЯ СИСТЕМА С ФОРМОЙ ===
+        async function loadAllComponentsForBuilds() {
+            for (const type of ['cpu', 'gpu', 'ram', 'storage', 'psu', 'case', 'mobo']) {
+                try {
+                    const r = await fetch(`${API_BASE}/admin/components/${type}`, { headers: getHeaders() });
+                    if (r.ok) {
+                        allComponents[type] = await r.json();
+                        const datalist = document.getElementById(`${type}List`);
+                        if (datalist) {
+                            datalist.innerHTML = allComponents[type].map(c => `<option value="${c.model_name}">`).join('');
+                        }
+                    }
+                } catch (e) { console.warn(`⚠️ Не удалось загрузить ${type}:`, e); }
+            }
+        }
+        async function loadBuilds() {
+            const c = document.getElementById('buildsContainer');
+            c.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            try {
+                const r = await fetch(`${API_BASE}/admin/builds`, { headers: getHeaders() });
+                if (!r.ok) throw new Error(r.statusText);
+                currentData.builds = await r.json();
+                renderBuilds();
+            } catch (e) { c.innerHTML = `<p style="color:red">❌ Ошибка: ${e.message}</p>`; }
+        }
+        function renderBuilds() {
+            const c = document.getElementById('buildsContainer');
+            const filter = document.getElementById('buildCategoryFilter').value;
+            const search = document.getElementById('buildSearch').value.toLowerCase();
+            let builds = currentData.builds;
+            if (filter) builds = builds.filter(b => b.category === filter);
+            if (search) builds = builds.filter(b => (b.title || '').toLowerCase().includes(search));
+            if (!builds.length) { c.innerHTML = '<p>Сборок нет</p>'; return; }
+            c.innerHTML = `<table class="data-table"><thead><tr><th>Название</th><th>Категория</th><th>Цена</th><th>Компоненты</th><th>Действия</th></tr></thead><tbody>
+                ${builds.map(b => `
+                    <tr>
+                        <td><strong>${b.title}</strong></td>
+                        <td><span class="category-badge ${getCategoryClass(b.category)}">${getCategoryName(b.category)}</span></td>
+                        <td><strong>${b.price?.toLocaleString('ru-RU')} ₽</strong></td>
+                        <td><small>${Object.values(b.components || {}).filter(v => v).slice(0, 3).join(', ')}${Object.keys(b.components || {}).length > 3 ? '...' : ''}</small></td>
+                        <td><button class="btn btn-sm btn-primary" onclick="editBuild('${b._id}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteBuild('${b._id}')">🗑️</button></td>
+                    </tr>
+                `).join('')}
+            </tbody></table>`;
+        }
+        function filterBuilds() { renderBuilds(); }
+        function openBuildModal(build = null) {
+            document.getElementById('buildModalTitle').textContent = build ? 'Редактировать сборку' : 'Добавить сборку';
+            document.getElementById('buildForm').reset();
+            document.getElementById('buildId').value = build?._id || '';
+            if (build) {
+                document.getElementById('buildTitle').value = build.title;
+                document.getElementById('buildCategory').value = build.category;
+                document.getElementById('buildPrice').value = build.price;
+                document.getElementById('buildDesc').value = build.description || '';
+                document.getElementById('buildImage').value = build.image || '';
+                const comps = build.components || {};
+                document.getElementById('compCpu').value = comps.cpu || '';
+                document.getElementById('compGpu').value = comps.gpu || '';
+                document.getElementById('compRam').value = comps.ram || '';
+                document.getElementById('compStorage').value = comps.storage || '';
+                document.getElementById('compPsu').value = comps.psu || '';
+                document.getElementById('compCase').value = comps.case || '';
+                document.getElementById('compMobo').value = comps.mobo || '';
+            }
+            updateBuildPreview();
+            ['Cpu','Gpu','Ram','Storage','Psu','Case','Mobo'].forEach(key => {
+                document.getElementById(`comp${key}`).addEventListener('input', updateBuildPreview);
+            });
+            document.getElementById('buildModal').classList.add('active');
+        }
+        function updateBuildPreview() {
+            const preview = document.getElementById('buildPreview');
+            const components = {
+                cpu: document.getElementById('compCpu').value, gpu: document.getElementById('compGpu').value,
+                ram: document.getElementById('compRam').value, storage: document.getElementById('compStorage').value,
+                psu: document.getElementById('compPsu').value, case: document.getElementById('compCase').value,
+                mobo: document.getElementById('compMobo').value
+            };
+            let html = '', total = 0;
+            for (const [key, value] of Object.entries(components)) {
+                if (value) {
+                    const compType = key === 'cpu' ? 'cpu' : key === 'gpu' ? 'gpu' : key === 'ram' ? 'ram' : key === 'storage' ? 'storage' : key === 'psu' ? 'psu' : key === 'case' ? 'case' : 'mobo';
+                    const found = (allComponents[compType] || []).find(c => c.model_name === value);
+                    const price = found?.price_rub || found?.price || 0;
+                    total += price;
+                    html += `<div class="build-preview-item"><span>${getCategoryName(compType)}:</span><strong>${value}${price ? ` — ${price.toLocaleString()} ₽` : ''}</strong></div>`;
+                }
+            }
+            preview.innerHTML = html || '<em>Добавьте компоненты для предпросмотра</em>';
+            document.getElementById('buildTotal').textContent = `Итого: ${total.toLocaleString('ru-RU')} ₽`;
+        }
+        async function saveBuild() {
+            const id = document.getElementById('buildId').value;
+            const components = {
+                cpu: document.getElementById('compCpu').value.trim(), gpu: document.getElementById('compGpu').value.trim(),
+                ram: document.getElementById('compRam').value.trim(), storage: document.getElementById('compStorage').value.trim(),
+                psu: document.getElementById('compPsu').value.trim(), case: document.getElementById('compCase').value.trim(),
+                mobo: document.getElementById('compMobo').value.trim()
+            };
+            for (const key in components) { if (!components[key]) delete components[key]; }
+            const data = {
+                title: document.getElementById('buildTitle').value.trim(),
+                category: document.getElementById('buildCategory').value,
+                price: parseInt(document.getElementById('buildPrice').value) || 0,
+                description: document.getElementById('buildDesc').value.trim(),
+                components, image: document.getElementById('buildImage').value.trim() || null,
+                is_published: true
+            };
+            if (!data.title) { alert('❌ Укажите название сборки'); return; }
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `${API_BASE}/admin/builds/${id}` : `${API_BASE}/admin/builds`;
+                const r = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(data) });
+                if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err.detail || 'Ошибка'); }
+                closeModal('buildModal'); showAlert('buildsAlert', '✅ Сборка сохранена', 'success'); loadBuilds();
+            } catch (e) { showAlert('buildsAlert', `❌ Ошибка: ${e.message}`, 'error'); }
+        }
+        async function deleteBuild(buildId) {
+            if (!confirm('Удалить эту сборку?')) return;
+            try {
+                await fetch(`${API_BASE}/admin/builds/${buildId}`, { method: 'DELETE', headers: getHeaders() });
+                showAlert('buildsAlert', '✅ Сборка удалена', 'success'); loadBuilds();
+            } catch (e) { showAlert('buildsAlert', `❌ Ошибка: ${e.message}`, 'error'); }
+        }
+        function editBuild(buildId) {
+            const build = currentData.builds.find(b => b._id === buildId);
+            if (build) openBuildModal(build);
+        }
+
+        // === 🔥 ГЛОССАРИЙ: ПОЛНАЯ СИНХРОНИЗАЦИЯ ===
+        async function loadGlossary() {
+            const c = document.getElementById('glossaryContainer');
+            c.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            try {
+                const r = await fetch(`${API_BASE}/admin/glossary`, { headers: getHeaders() });
+                if (!r.ok) throw new Error(r.statusText);
+                currentData.glossary = await r.json();
+                renderGlossary();
+            } catch (e) { c.innerHTML = `<p style="color:red">❌ Ошибка: ${e.message}</p>`; }
+        }
+        function renderGlossary() {
+            const c = document.getElementById('glossaryContainer');
+            const filter = document.getElementById('glossaryCategoryFilter').value;
+            const search = document.getElementById('glossarySearch').value.toLowerCase();
+            let glossary = currentData.glossary;
+            if (filter) glossary = glossary.filter(g => g.category === filter);
+            if (search) glossary = glossary.filter(g => (g.term || '').toLowerCase().includes(search));
+            if (!glossary.length) { c.innerHTML = '<p>Термины не найдены</p>'; return; }
+            c.innerHTML = `<table class="data-table"><thead><tr><th>Термин</th><th>Категория</th><th>Определение</th><th>Действия</th></tr></thead><tbody>
+                ${glossary.map(g => `
+                    <tr>
+                        <td><strong>${g.term}</strong></td>
+                        <td><span class="category-badge">${g.category}</span></td>
+                        <td><small>${(g.definition || '').substring(0, 50)}...</small></td>
+                        <td><button class="btn btn-sm btn-primary" onclick="editGlossary('${g.term}')">✏️</button><button class="btn btn-sm btn-danger" onclick="deleteGlossary('${g.term}')">🗑️</button></td>
+                    </tr>
+                `).join('')}
+            </tbody></table>`;
+        }
+        function filterGlossary() { renderGlossary(); }
+        function openGlossaryModal(glossary = null) {
+            document.getElementById('glossaryModalTitle').textContent = glossary ? 'Редактировать термин' : 'Добавить термин';
+            document.getElementById('glossaryId').value = glossary?.term || '';
+            document.getElementById('glossaryTerm').value = glossary?.term || '';
+            document.getElementById('glossaryDef').value = glossary?.definition || '';
+            document.getElementById('glossaryCategory').value = glossary?.category || 'general';
+            document.getElementById('glossaryTerm').disabled = !!glossary;
+            document.getElementById('glossaryModal').classList.add('active');
+        }
+        async function saveGlossary() {
+            const term = document.getElementById('glossaryId').value;
+            const data = {
+                term: document.getElementById('glossaryTerm').value.trim(),
+                definition: document.getElementById('glossaryDef').value.trim(),
+                category: document.getElementById('glossaryCategory').value
+            };
+            if (!data.term || !data.definition) { alert('❌ Заполните все обязательные поля'); return; }
+            try {
+                const method = term ? 'PUT' : 'POST';
+                const url = term ? `${API_BASE}/admin/glossary/${encodeURIComponent(term)}` : `${API_BASE}/admin/glossary`;
+                const r = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(data) });
+                if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err.detail || 'Ошибка'); }
+                closeModal('glossaryModal'); showAlert('glossaryAlert', '✅ Термин сохранён', 'success'); loadGlossary();
+            } catch (e) { showAlert('glossaryAlert', `❌ Ошибка: ${e.message}`, 'error'); }
+        }
+        async function deleteGlossary(term) {
+            if (!confirm(`Удалить термин "${term}"?`)) return;
+            try {
+                await fetch(`${API_BASE}/admin/glossary/${encodeURIComponent(term)}`, { method: 'DELETE', headers: getHeaders() });
+                showAlert('glossaryAlert', '✅ Термин удалён', 'success'); loadGlossary();
+            } catch (e) { showAlert('glossaryAlert', `❌ Ошибка: ${e.message}`, 'error'); }
+        }
+        function editGlossary(term) {
+            const g = currentData.glossary.find(x => x.term === term);
+            if (g) openGlossaryModal(g);
+        }
+
+        // === 🔥 ПОЛЬЗОВАТЕЛИ: ПОЛНОЕ РЕДАКТИРОВАНИЕ ===
+        async function loadUsers() {
+            if (currentUser.role < 4) { document.getElementById('usersContainer').innerHTML = '<p style="color:red;">❌ Требуется роль Разработчик</p>'; return; }
+            const c = document.getElementById('usersContainer');
+            c.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            try {
+                const r = await fetch(`${API_BASE}/admin/users`, { headers: getHeaders() });
+                if (!r.ok) throw new Error(r.statusText);
+                currentData.users = await r.json();
+                renderUsers();
+            } catch (e) { c.innerHTML = `<p style="color:red">❌ Ошибка: ${e.message}</p>`; }
+        }
+        function renderUsers() {
+            const c = document.getElementById('usersContainer');
+            const filter = document.getElementById('userRoleFilter').value;
+            const search = document.getElementById('userSearch').value.toLowerCase();
+            let users = currentData.users;
+            if (filter) users = users.filter(u => u.role == filter);
+            if (search) users = users.filter(u => (u.user_name || '').toLowerCase().includes(search) || (u.nickname || '').toLowerCase().includes(search));
+            if (!users.length) { c.innerHTML = '<p>Пользователи не найдены</p>'; return; }
+            c.innerHTML = `<table class="data-table"><thead><tr><th>Имя</th><th>Никнейм</th><th>Email</th><th>Роль</th><th>Действия</th></tr></thead><tbody>
+                ${users.map(u => `
+                    <tr>
+                        <td><strong>${u.user_name}</strong></td>
+                        <td>${u.nickname || '—'}</td>
+                        <td>${u.user_email || '—'}</td>
+                        <td><span class="role-badge" style="background:${getRoleColor(u.role)}20;color:${getRoleColor(u.role)}">${getRoleName(u.role)}</span></td>
+                        <td><button class="btn btn-sm btn-primary" onclick="editUser('${u.user_name}')">✏️</button>${u.user_name !== 'admin' && u.user_name !== currentUser.user_name ? `<button class="btn btn-sm btn-danger" onclick="deleteUser('${u.user_name}')">🗑️</button>` : ''}</td>
+                    </tr>
+                `).join('')}
+            </tbody></table>`;
+        }
+        function getRoleColor(role) {
+            const colors = { 1: '#6b7280', 2: '#00d4aa', 3: '#6366f1', 4: '#ef4444' };
+            return colors[role] || '#6b7280';
+        }
+        function filterUsers() { renderUsers(); }
+        function openUserModal(user) {
+            const targetUser = user || currentUser;
+            if (!targetUser) return;
+            
+            document.getElementById('editUserId').value = targetUser.user_name;
+            document.getElementById('editUserName').value = targetUser.user_name;
+            document.getElementById('editNickname').value = targetUser.nickname || '';
+            document.getElementById('editUserRole').value = targetUser.role;
+            document.getElementById('editUserEmail').value = targetUser.user_email || '';
+            document.getElementById('editUserPhone').value = targetUser.user_phone || '';
+            document.getElementById('editUserAvatarUrl').value = targetUser.user_img || '';
+            
+            const preview = document.getElementById('editUserAvatarPreview');
+            if (targetUser.user_img) { preview.src = targetUser.user_img; preview.style.display = 'block'; } else { preview.style.display = 'none'; }
+            
+            document.getElementById('userModal').classList.add('active');
+        }
+        async function saveUser() {
+            const username = document.getElementById('editUserId').value;
+            if (username === 'admin') { alert('❌ Нельзя редактировать главного админа'); return; }
+            
+            const avatarPreview = document.getElementById('editUserAvatarPreview');
+            const avatarUrl = document.getElementById('editUserAvatarUrl').value.trim();
+            
+            const data = {
+                nickname: document.getElementById('editNickname').value.trim() || null,
+                user_email: document.getElementById('editUserEmail').value.trim() || null,
+                user_phone: document.getElementById('editUserPhone').value.trim() || null,
+                role: parseInt(document.getElementById('editUserRole').value),
+                user_img: avatarPreview.style.display !== 'none' ? avatarPreview.src : (avatarUrl || null)
+            };
+            
+            try {
+                const r = await fetch(`${API_BASE}/admin/users/${username}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(data) });
+                if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err.detail || 'Ошибка'); }
+                
+                currentUser = { ...currentUser, ...data };
+                updateHeaderAvatar(data.user_img);
+                
+                closeModal('userModal'); 
+                showAlert('usersAlert', '✅ Пользователь обновлён', 'success'); 
+                loadUsers();
+            } catch (e) { showAlert('usersAlert', `❌ Ошибка: ${e.message}`, 'error'); }
+        }
+        async function deleteUser(username) {
+            if (username === 'admin' || username === currentUser.user_name) { alert('❌ Нельзя удалить этого пользователя'); return; }
+            if (!confirm(`Удалить пользователя "${username}"? Это действие нельзя отменить.`)) return;
+            try {
+                await fetch(`${API_BASE}/admin/users/${username}`, { method: 'DELETE', headers: getHeaders() });
+                showAlert('usersAlert', '✅ Пользователь удалён', 'success'); loadUsers();
+            } catch (e) { showAlert('usersAlert', `❌ Ошибка: ${e.message}`, 'error'); }
+        }
+        function deleteUserFromModal() {
+            const username = document.getElementById('editUserId').value;
+            if (username) deleteUser(username);
+        }
+        function editUser(username) {
+            const user = currentData.users.find(u => u.user_name === username);
+            if (user) openUserModal(user);
+        }
+
+        // === ЗАКРЫТИЕ МОДАЛОК ===
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); });
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('active'); });
+        });
+    </script>
+</body>
+</html>

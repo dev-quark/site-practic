@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Builder - Список ПО</title>
+    <style>
+        /* === БАЗОВЫЕ СТИЛИ === */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #f4f4f4;
+        }
+
+        /* === ШАПКА === */
+        .head {
+            background-color: black;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+            z-index: 1000;
+        }
+
+        .head-left { display: flex; align-items: center; gap: 15px; }
+
+        /* 🔥 ЛОГОТИП + НАЗВАНИЕ */
+        .site-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00d4aa;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .site-logo:hover { color: #00b894; }
+
+        /* 🔥 ТЕКСТ "ПАНЕЛЬ" */
+        .panel-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            margin-left: 10px;
+            padding: 6px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .panel-link:hover { background: #222; color: #00d4aa; }
+        .panel-link.hidden { display: none !important; }
+
+        .open_close {
+            font-size: 30px;
+            color: white;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* === ПОЛЬЗОВАТЕЛЬ В ШАПКЕ === */
+        .user-section { display: flex; align-items: center; gap: 10px; }
+
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
+            border: 2px solid #00d4aa; cursor: pointer; background: #333;
+            flex-shrink: 0; position: relative;
+        }
+        .user-avatar:hover { transform: scale(1.05); }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .user-avatar-placeholder {
+            width: 100%; height: 100%; display: flex; align-items: center;
+            justify-content: center; font-weight: bold; color: #000; font-size: 16px;
+        }
+
+        .user-name {
+            color: white; font-weight: 600; font-size: 15px; cursor: pointer;
+            text-decoration: none;
+        }
+        .user-name:hover { text-decoration: underline; }
+
+        .role-badge {
+            padding: 3px 8px; border-radius: 10px; font-size: 10px;
+            font-weight: 600; border: 1px solid; white-space: nowrap; color: #fff;
+        }
+
+        .auth-buttons-mini a {
+            color: white; text-decoration: none; margin: 0 10px; font-size: 14px;
+        }
+        .auth-buttons-mini a:hover { color: #ccc; }
+
+        /* === ОСНОВНОЙ КОНТЕЙНЕР === */
+        .main-wrapper { display: flex; flex: 1; position: relative; overflow: hidden; }
+
+        /* === БОКОВОЕ МЕНЮ === */
+        .list_open {
+            background-color: #1a1a1a; width: 0; overflow: hidden;
+            transition: width 0.3s ease; white-space: nowrap; flex-shrink: 0;
+        }
+        .list_open.active { width: 300px; overflow-y: auto; }
+        .list_open ul { list-style: none; padding: 20px 0; margin: 0; width: 300px; }
+        .list_open li { padding: 15px 25px; border-bottom: 1px solid #333; }
+        .list_open a {
+            color: white; text-decoration: none; font-size: 18px; display: block;
+        }
+        .list_open a:hover { background-color: #333; }
+        .list_open a.active { color: #00d4aa; font-weight: 600; }
+
+        /* === КОНТЕНТ === */
+        .content { 
+            flex: 1; 
+            padding: 20px; 
+            overflow-y: auto; 
+            background-color: #f4f4f4; 
+        }
+        .hidden { display: none !important; }
+
+        /* === 🔥 СТИЛИ СПИСКА ПО === */
+        .po-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ddd;
+        }
+        .po-header h1 {
+            color: #000;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .po-header p {
+            color: #666;
+            margin: 0;
+            font-size: 15px;
+        }
+
+        /* Категории ПО */
+        .po-categories {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .po-category-btn {
+            padding: 8px 16px;
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .po-category-btn:hover,
+        .po-category-btn.active {
+            background: #00d4aa;
+            border-color: #00d4aa;
+            color: #000;
+            font-weight: 600;
+        }
+
+        /* Сетка карточек ПО */
+        .po-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .po-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #eee;
+        }
+        .po-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+            border-color: #00d4aa;
+        }
+
+        /* 🔥 ИЗОБРАЖЕНИЕ ПРОГРАММЫ */
+        .po-image {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .po-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        .po-card:hover .po-image img {
+            transform: scale(1.05);
+        }
+        .po-image-placeholder {
+            color: #fff;
+            font-size: 48px;
+            opacity: 0.8;
+        }
+        .po-image-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            padding: 20px 15px 15px;
+            color: #fff;
+        }
+        .po-image-title {
+            font-weight: 700;
+            font-size: 16px;
+            margin: 0;
+        }
+        .po-image-category {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Тело карточки */
+        .po-body {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .po-description {
+            color: #444;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0 0 20px 0;
+            flex: 1;
+        }
+
+        .po-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .po-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #00d4aa;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        .po-link:hover {
+            color: #00b894;
+            text-decoration: underline;
+        }
+        .po-link::after {
+            content: "→";
+            font-size: 16px;
+        }
+
+        /* Поиск */
+        .po-search {
+            margin-bottom: 20px;
+        }
+        .po-search input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            background: #fff;
+            transition: border-color 0.2s;
+        }
+        .po-search input:focus {
+            outline: none;
+            border-color: #00d4aa;
+        }
+
+        /* Адаптив */
+        @media (max-width: 768px) {
+            .head { padding: 0 10px; }
+            .site-logo span { display: none; }
+            .panel-link { font-size: 14px; padding: 4px 8px; }
+            .list_open.active { width: 250px; }
+            .list_open ul { width: 250px; }
+            .content { padding: 15px; }
+            .po-grid { grid-template-columns: 1fr; }
+            .po-image { height: 140px; }
+            .po-footer { flex-direction: column; gap: 10px; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- === ШАПКА === -->
+    <header class="head">
+        <div class="head-left">
+            <button class="open_close" id="menuBtn" onclick="toggleMenu()">☰</button>
+            
+            <!-- ЛОГОТИП + НАЗВАНИЕ -->
+            <a href="index.html" class="site-logo">
+                🖥️ <span>PC Builder</span>
+            </a>
+            
+            <!-- ПАНЕЛЬ (видна только для role >= 2) -->
+            <a href="panel.html" class="panel-link hidden" id="panelLink">Панель</a>
+        </div>
+        
+        <!-- ПОЛЬЗОВАТЕЛЬ: аватар + ник + роль -->
+        <div class="user-section" id="userSection">
+            <a href="register.html">Зарегистрироваться</a>
+            <a href="login.html">Войти</a>
+        </div>
+    </header>
+
+    <!-- === ОСНОВНОЙ КОНТЕЙНЕР === -->
+    <div class="main-wrapper">
+        
+        <!-- БОКОВОЕ МЕНЮ -->
+        <aside class="list_open active" id="sideMenu">
+            <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="about.html">О нас</a></li>
+                <li><a href="assembly.html">Каталог сборок</a></li>
+                <li><a href="components.html">Каталог комплектующих</a></li>
+                <li><a href="https://config.forgepower.рит.online" target="_blank">Конфигуратор</a></li>
+                <li><a href="collection.html">Для начинающих</a></li>
+                <li><a href="glossary.html">Глоссарий</a></li>
+                <li><a href="po.html" class="active">Список ПО</a></li>
+                <li><a href="contacts.html">Контакты</a></li>
+                <li><a href="https://forum.forgepower.рит.online" target="_blank">Сообщество</a></li>
+            </ul>
+        </aside>
+
+        <!-- 🔥 КОНТЕНТ: СПИСОК ПО (данные из MongoDB) -->
+        <main class="content">
+            
+            <div class="po-header">
+                <h1>💻 Список ПО</h1>
+                <p>Рекомендуемое программное обеспечение для вашего ПК</p>
+            </div>
+
+            <!-- Поиск -->
+            <div class="po-search">
+                <input type="text" id="poSearch" placeholder="🔍 Поиск программы..." oninput="filterPO()">
+            </div>
+
+            <!-- Категории -->
+            <div class="po-categories">
+                <button class="po-category-btn active" onclick="filterCategory('all', this)">Все</button>
+                <button class="po-category-btn" onclick="filterCategory('os', this)">ОС</button>
+                <button class="po-category-btn" onclick="filterCategory('drivers', this)">Драйверы</button>
+                <button class="po-category-btn" onclick="filterCategory('utils', this)">Утилиты</button>
+                <button class="po-category-btn" onclick="filterCategory('security', this)">Безопасность</button>
+                <button class="po-category-btn" onclick="filterCategory('office', this)">Офис</button>
+                <button class="po-category-btn" onclick="filterCategory('media', this)">Медиа</button>
+            </div>
+
+            <!-- Сетка карточек ПО (загружается из MongoDB) -->
+            <div class="po-grid" id="poGrid">
+                <!-- Карточки генерируются динамически через JavaScript -->
+            </div>
+
+            <!-- Заглушка при загрузке -->
+            <div id="poLoading" style="text-align:center;padding:40px;color:#666">
+                Загрузка списка ПО...
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- === СКРИПТЫ === -->
+    <script src="auth.js"></script>
+    <script>
+        // === ПЕРЕКЛЮЧЕНИЕ МЕНЮ ===
+        function toggleMenu() {
+            const menu = document.getElementById('sideMenu');
+            const btn = document.getElementById('menuBtn');
+            if (menu) menu.classList.toggle('active');
+            if (btn) btn.innerHTML = menu.classList.contains('active') ? '✕' : '☰';
+        }
+
+        // === 🔥 ФУНКЦИЯ: Построение URL изображения ПО ===
+        // Путь на сервере: data/images/po/{id}/{id}.{ext}
+        // URL для браузера: /data/images/po/{id}/{id}.{ext}
+        function buildPOImageUrl(poId, fileExt = 'png') {
+            return `${API_BASE}/data/images/po/${poId}/${poId}.${fileExt}`;
+        }
+
+        // === 🔥 ФУНКЦИЯ: Создание HTML карточки ПО ===
+        function createPOCard(po) {
+            const { id, name, category, description, link, image_ext } = po;
+            
+            // 🔥 Формируем полный URL изображения
+            const imageUrl = image_ext ? buildPOImageUrl(id, image_ext) : null;
+            
+            // Заглушка-эмодзи по категории
+            const placeholderIcons = {
+                'os': '🪟', 'drivers': '🔧', 'utils': '⚙️',
+                'security': '🛡️', 'office': '📄', 'media': '🎬'
+            };
+            const placeholder = placeholderIcons[category] || '💻';
+            
+            return `
+                <div class="po-card" 
+                     data-id="${id}" 
+                     data-category="${category}" 
+                     data-name="${name.toLowerCase()} ${category}">
+                    
+                    <!-- 🔥 Изображение (реальное или заглушка) -->
+                    <div class="po-image">
+                        <img src="${imageUrl || ''}" 
+                             alt="${name}" 
+                             class="po-img-real" 
+                             style="display:${imageUrl ? 'block' : 'none'}"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                        <div class="po-image-placeholder" style="display:${imageUrl ? 'none' : 'flex'}">
+                            ${placeholder}
+                        </div>
+                        <div class="po-image-overlay">
+                            <h3 class="po-image-title">${name}</h3>
+                            <span class="po-image-category">${getCategoryName(category)}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Тело карточки -->
+                    <div class="po-body">
+                        <p class="po-description">${description}</p>
+                        
+                        <div class="po-footer">
+                            <a href="${link}" class="po-link" target="_blank">Официальный сайт</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // === 🔥 ФУНКЦИЯ: Название категории для отображения ===
+        function getCategoryName(cat) {
+            const names = {
+                'os': 'ОС', 'drivers': 'Драйверы', 'utils': 'Утилиты',
+                'security': 'Безопасность', 'office': 'Офис', 'media': 'Медиа'
+            };
+            return names[cat] || cat;
+        }
+
+        // === 🔥 ФУНКЦИЯ: Загрузка списка ПО из MongoDB ===
+        async function loadPOList() {
+            const grid = document.getElementById('poGrid');
+            const loading = document.getElementById('poLoading');
+            
+            try {
+                // 🔥 Запрос к бэкенду за списком ПО
+                const response = await fetch(`${API_BASE}/api/po/list`);
+                
+                if (!response.ok) {
+                    throw new Error(`Ошибка ${response.status}`);
+                }
+                
+                const poList = await response.json();
+                
+                // 🔥 Генерируем карточки
+                grid.innerHTML = poList.map(po => createPOCard(po)).join('');
+                
+                // Скрываем заглушку загрузки
+                loading.style.display = 'none';
+                
+                console.log(`✅ Загружено ${poList.length} программ`);
+                
+            } catch (err) {
+                console.error('❌ Ошибка загрузки ПО:', err);
+                loading.textContent = '⚠️ Не удалось загрузить список ПО';
+                
+                // 🔧 Фоллбэк: статические данные если бэкенд не отвечает
+                grid.innerHTML = getFallbackPO().map(po => createPOCard(po)).join('');
+                loading.style.display = 'none';
+            }
+        }
+
+        // === 🔧 Фоллбэк-данные (если бэкенд недоступен) ===
+        function getFallbackPO() {
+            return [
+                { id: 'win11', name: 'Windows 11', category: 'os', description: 'Современная ОС от Microsoft с улучшенным интерфейсом.', link: 'https://www.microsoft.com/windows', image_ext: null },
+                { id: 'ubuntu', name: 'Ubuntu Linux', category: 'os', description: 'Популярный дистрибутив Linux с открытым исходным кодом.', link: 'https://ubuntu.com', image_ext: null },
+                { id: 'nvidia-geforce', name: 'GeForce Experience', category: 'drivers', description: 'Утилита для обновления драйверов NVIDIA и оптимизации игр.', link: 'https://www.nvidia.com/geforce/geforce-experience', image_ext: null },
+                { id: 'amd-adrenalin', name: 'AMD Adrenalin', category: 'drivers', description: 'Панель управления и драйверы для видеокарт AMD.', link: 'https://www.amd.com/software/adrenalin', image_ext: null },
+                { id: 'cpu-z', name: 'CPU-Z', category: 'utils', description: 'Информация о процессоре, материнской плате и памяти.', link: 'https://www.cpuid.com/softwares/cpu-z.html', image_ext: null },
+                { id: 'gpu-z', name: 'GPU-Z', category: 'utils', description: 'Детальная информация о видеокарте: модель, частоты, температура.', link: 'https://www.techpowerup.com/gpuz', image_ext: null },
+                { id: 'hwmonitor', name: 'HWMonitor', category: 'utils', description: 'Мониторинг температур и напряжений компонентов ПК.', link: 'https://www.cpuid.com/softwares/hwmonitor.html', image_ext: null },
+                { id: 'crystaldiskinfo', name: 'CrystalDiskInfo', category: 'utils', description: 'Проверка состояния дисков по технологии S.M.A.R.T.', link: 'https://crystalmark.info/en/software/crystaldiskinfo', image_ext: null },
+                { id: 'malwarebytes', name: 'Malwarebytes', category: 'security', description: 'Защита от вредоносного ПО и эксплойтов.', link: 'https://www.malwarebytes.com', image_ext: null },
+                { id: 'libreoffice', name: 'LibreOffice', category: 'office', description: 'Бесплатный офисный пакет с редактором, таблицами, презентациями.', link: 'https://www.libreoffice.org', image_ext: null },
+                { id: 'vlc', name: 'VLC Media Player', category: 'media', description: 'Универсальный медиаплеер для любых форматов.', link: 'https://www.videolan.org/vlc', image_ext: null },
+                { id: '7zip', name: '7-Zip', category: 'utils', description: 'Бесплатный архиватор с высокой степенью сжатия.', link: 'https://www.7-zip.org', image_ext: null }
+            ];
+        }
+
+        // === 🔍 ФИЛЬТР ПО КАТЕГОРИЯМ ===
+        function filterCategory(category, btn) {
+            document.querySelectorAll('.po-category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const cards = document.querySelectorAll('.po-card');
+            cards.forEach(card => {
+                if (category === 'all' || card.dataset.category === category) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // === 🔍 ПОИСК ПО НАЗВАНИЮ ===
+        function filterPO() {
+            const searchInput = document.getElementById('poSearch');
+            const filter = searchInput.value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.po-card');
+            
+            cards.forEach(card => {
+                const name = card.dataset.name || '';
+                const title = card.querySelector('.po-image-title')?.textContent.toLowerCase() || '';
+                
+                if (name.includes(filter) || title.includes(filter)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // === 🔥 ФУНКЦИЯ: Путь из БД → Полный URL для аватара ===
+        function buildAvatarUrl(pathFromDb) {
+            if (!pathFromDb) return null;
+            if (pathFromDb.startsWith('http://') || pathFromDb.startsWith('https://')) {
+                return pathFromDb;
+            }
+            return `${API_BASE}${pathFromDb}`;
+        }
+
+        // === 🔥 ФУНКЦИЯ: Отрисовка пользователя в шапке с аватаром с сервера ===
+        function renderUserSection(containerId, profile = null) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            if (!isAuthenticated()) {
+                container.innerHTML = `
+                    <div class="auth-buttons-mini">
+                        <a href="register.html">Зарегистрироваться</a>
+                        <a href="login.html">Войти</a>
+                    </div>
+                `;
+                return;
+            }
+
+            const username = getCurrentUsername();
+            const displayName = profile?.nickname || profile?.user_name || username;
+            const roleId = profile?.role || 1;
+            const roleConfig = ROLES_CONFIG[roleId] || ROLES_CONFIG[1];
+            
+            const rawAvatarUrl = profile?.avatar_url || profile?.user_img;
+            const avatarUrl = buildAvatarUrl(rawAvatarUrl);
+            
+            const avatarHtml = avatarUrl
+                ? `<img src="${avatarUrl}" alt="${displayName}" 
+                       style="width:100%;height:100%;object-fit:cover"
+                       onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                   <div class="user-avatar-placeholder" style="display:none;background:${roleConfig.color}">
+                       ${displayName.charAt(0).toUpperCase()}
+                   </div>`
+                : `<div class="user-avatar-placeholder" style="background:${roleConfig.color}">
+                       ${displayName.charAt(0).toUpperCase()}
+                   </div>`;
+
+            container.innerHTML = `
+                <div class="user-avatar" onclick="location.href='profile.html'" title="Профиль">
+                    ${avatarHtml}
+                </div>
+                <a href="profile.html" class="user-name" style="color:${roleConfig.color}">${displayName}</a>
+                <span class="role-badge" style="background:${roleConfig.color}33;border-color:${roleConfig.color};color:${roleConfig.color}">
+                    ${roleConfig.name}
+                </span>
+                <a href="#" onclick="logout(event)" style="color:#fff;margin-left:8px;font-size:13px">Выйти</a>
+            `;
+        }
+
+        // === ОБНОВЛЕНИЕ ВИДИМОСТИ "ПАНЕЛЬ" ===
+        function updatePanelLink(profile = null) {
+            const panelLink = document.getElementById('panelLink');
+            if (!panelLink) return;
+            const roleId = profile?.role || 1;
+            const hasAccess = isAuthenticated() && typeof roleId === 'number' && roleId >= 2;
+            panelLink.classList.toggle('hidden', !hasAccess);
+        }
+
+        // === ИНИЦИАЛИЗАЦИЯ СТРАНИЦЫ ===
+        async function initPage() {
+            renderUserSection('userSection');
+            updatePanelLink(null);
+            
+            // 🔥 Загружаем список ПО из MongoDB
+            await loadPOList();
+            
+            if (isAuthenticated()) {
+                try {
+                    const username = getCurrentUsername();
+                    if (username) {
+                        const profile = await fetchProfile(username);
+                        if (profile) {
+                            renderUserSection('userSection', profile);
+                            updatePanelLink(profile);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Ошибка загрузки профиля:', e);
+                    updatePanelLink(null);
+                }
+            } else {
+                updatePanelLink(null);
+            }
+        }
+
+        // Запуск после загрузки DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPage);
+        } else {
+            initPage();
+        }
+
+        // Закрытие меню при клике вне
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('sideMenu');
+            const btn = document.getElementById('menuBtn');
+            if (menu && menu.classList.contains('active') && 
+                !menu.contains(e.target) && !btn.contains(e.target)) {
+                menu.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

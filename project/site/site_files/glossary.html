@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC Builder - Глоссарий</title>
+    <style>
+        /* === БАЗОВЫЕ СТИЛИ === */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #f4f4f4;
+        }
+
+        /* === ШАПКА === */
+        .head {
+            background-color: black;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+            z-index: 1000;
+        }
+
+        .head-left { display: flex; align-items: center; gap: 15px; }
+
+        /* 🔥 ЛОГОТИП + НАЗВАНИЕ */
+        .site-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00d4aa;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .site-logo:hover { color: #00b894; }
+
+        /* 🔥 ТЕКСТ "ПАНЕЛЬ" */
+        .panel-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            margin-left: 10px;
+            padding: 6px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .panel-link:hover { background: #222; color: #00d4aa; }
+        .panel-link.hidden { display: none !important; }
+
+        .open_close {
+            font-size: 30px;
+            color: white;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* === ПОЛЬЗОВАТЕЛЬ В ШАПКЕ === */
+        .user-section { display: flex; align-items: center; gap: 10px; }
+
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
+            border: 2px solid #00d4aa; cursor: pointer; background: #333;
+            flex-shrink: 0; position: relative;
+        }
+        .user-avatar:hover { transform: scale(1.05); }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .user-avatar-placeholder {
+            width: 100%; height: 100%; display: flex; align-items: center;
+            justify-content: center; font-weight: bold; color: #000; font-size: 16px;
+        }
+
+        .user-name {
+            color: white; font-weight: 600; font-size: 15px; cursor: pointer;
+            text-decoration: none;
+        }
+        .user-name:hover { text-decoration: underline; }
+
+        .role-badge {
+            padding: 3px 8px; border-radius: 10px; font-size: 10px;
+            font-weight: 600; border: 1px solid; white-space: nowrap; color: #fff;
+        }
+
+        .auth-buttons-mini a {
+            color: white; text-decoration: none; margin: 0 10px; font-size: 14px;
+        }
+        .auth-buttons-mini a:hover { color: #ccc; }
+
+        /* === ОСНОВНОЙ КОНТЕЙНЕР === */
+        .main-wrapper { display: flex; flex: 1; position: relative; overflow: hidden; }
+
+        /* === БОКОВОЕ МЕНЮ === */
+        .list_open {
+            background-color: #1a1a1a; width: 0; overflow: hidden;
+            transition: width 0.3s ease; white-space: nowrap; flex-shrink: 0;
+        }
+        .list_open.active { width: 300px; overflow-y: auto; }
+        .list_open ul { list-style: none; padding: 20px 0; margin: 0; width: 300px; }
+        .list_open li { padding: 15px 25px; border-bottom: 1px solid #333; }
+        .list_open a {
+            color: white; text-decoration: none; font-size: 18px; display: block;
+        }
+        .list_open a:hover { background-color: #333; }
+        .list_open a.active { color: #00d4aa; font-weight: 600; }
+
+        /* === КОНТЕНТ === */
+        .content { 
+            flex: 1; 
+            padding: 20px; 
+            overflow-y: auto; 
+            background-color: #f4f4f4; 
+        }
+        .hidden { display: none !important; }
+
+        /* === 🔥 СТИЛИ ГЛОССАРИЯ === */
+        .glossary-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ddd;
+        }
+        .glossary-header h1 {
+            color: #000;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .glossary-header p {
+            color: #666;
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .glossary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .glossary-item {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #00d4aa;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .glossary-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+        }
+
+        .glossary-term {
+            font-weight: 700;
+            font-size: 18px;
+            color: #000;
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .glossary-term::before {
+            content: "📌";
+            font-size: 16px;
+        }
+
+        .glossary-definition {
+            color: #444;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Поиск по глоссарию */
+        .glossary-search {
+            margin-bottom: 20px;
+        }
+        .glossary-search input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            background: #fff;
+            transition: border-color 0.2s;
+        }
+        .glossary-search input:focus {
+            outline: none;
+            border-color: #00d4aa;
+        }
+        .glossary-search input::placeholder {
+            color: #999;
+        }
+
+        /* 🔥 ЗАГРУЗКА И ОШИБКИ */
+        .glossary-loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .glossary-loading .spinner {
+            width: 30px; height: 30px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #00d4aa;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .glossary-error {
+            text-align: center;
+            padding: 30px;
+            color: #ef4444;
+            background: #fee2e2;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .glossary-empty {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Адаптив */
+        @media (max-width: 768px) {
+            .head { padding: 0 10px; }
+            .site-logo span { display: none; }
+            .panel-link { font-size: 14px; padding: 4px 8px; }
+            .list_open.active { width: 250px; }
+            .list_open ul { width: 250px; }
+            .content { padding: 15px; }
+            .glossary-grid { grid-template-columns: 1fr; }
+            .glossary-term { font-size: 16px; }
+            .glossary-definition { font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- === ШАПКА === -->
+    <header class="head">
+        <div class="head-left">
+            <button class="open_close" id="menuBtn" onclick="toggleMenu()">☰</button>
+            
+            <!-- ЛОГОТИП + НАЗВАНИЕ -->
+            <a href="index.html" class="site-logo">
+                🖥️ <span>PC Builder</span>
+            </a>
+            
+            <!-- ПАНЕЛЬ (видна только для role >= 2) -->
+            <a href="panel.html" class="panel-link hidden" id="panelLink">Панель</a>
+        </div>
+        
+        <!-- ПОЛЬЗОВАТЕЛЬ: аватар + ник + роль -->
+        <div class="user-section" id="userSection">
+            <a href="register.html">Зарегистрироваться</a>
+            <a href="login.html">Войти</a>
+        </div>
+    </header>
+
+    <!-- === ОСНОВНОЙ КОНТЕЙНЕР === -->
+    <div class="main-wrapper">
+        
+        <!-- БОКОВОЕ МЕНЮ -->
+        <aside class="list_open" id="sideMenu">
+            <ul>
+                <li><a href="index.html">Главная</a></li>
+                <li><a href="about.html">О нас</a></li>
+                <li><a href="assembly.html">Каталог сборок</a></li>
+                <li><a href="components.html">Каталог комплектующих</a></li>
+                <li><a href="https://config.forgepower.рит.online">Конфигуратор</a></li>
+                <li><a href="collection.html">Для начинающих</a></li>
+                <li><a href="glossary.html" class="active">Глоссарий</a></li>
+                <li><a href="po.html">Список ПО</a></li>
+                <li><a href="contacts.html">Контакты</a></li>
+                <li><a href="https://forum.forgepower.рит.online">Сообщество</a></li>
+            </ul>
+        </aside>
+
+        <!-- 🔥 КОНТЕНТ: ГЛОССАРИЙ -->
+        <main class="content">
+            
+            <div class="glossary-header">
+                <h1>📖 Глоссарий</h1>
+                <p>Словарь терминов, используемых в проекте PC Builder</p>
+            </div>
+
+            <!-- Поиск -->
+            <div class="glossary-search">
+                <input type="text" id="glossarySearch" placeholder="🔍 Поиск термина..." oninput="filterGlossary()">
+            </div>
+
+            <!-- 🔥 КОНТЕЙНЕР ДЛЯ ДИНАМИЧЕСКИХ ТЕРМИНОВ -->
+            <div class="glossary-grid" id="glossaryGrid">
+                <!-- Термины загружаются через JS -->
+                <div class="glossary-loading" id="glossaryLoading">
+                    <div class="spinner"></div>
+                    <p>Загрузка терминов...</p>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- === СКРИПТЫ === -->
+    <script src="auth.js"></script>
+    <script>
+        // === КОНФИГУРАЦИЯ ===
+        const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://127.0.0.1:10000/api'
+            : 'https://forgepower.рит.online/api';
+
+        let glossaryData = []; // Кэш терминов
+
+        // === ПЕРЕКЛЮЧЕНИЕ МЕНЮ ===
+        function toggleMenu() {
+            const menu = document.getElementById('sideMenu');
+            const btn = document.getElementById('menuBtn');
+            if (menu) menu.classList.toggle('active');
+            if (btn) btn.innerHTML = menu.classList.contains('active') ? '✕' : '☰';
+        }
+
+        // === 🔥 ЗАГРУЗКА ГЛОССАРИЯ ИЗ БД ===
+        async function loadGlossary() {
+            const grid = document.getElementById('glossaryGrid');
+            const loading = document.getElementById('glossaryLoading');
+            
+            // Показываем загрузку
+            if (loading) loading.style.display = 'block';
+            grid.innerHTML = '';
+            grid.appendChild(loading);
+            
+            try {
+                // 🔥 Запрос к API
+                const response = await fetch(`${API_BASE}/glossary`, {
+                    headers: { 'Authorization': getToken() ? `Bearer ${getToken()}` : '' }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
+                }
+                
+                glossaryData = await response.json();
+                renderGlossary(glossaryData);
+                
+            } catch (error) {
+                console.error('❌ Ошибка загрузки глоссария:', error);
+                grid.innerHTML = `
+                    <div class="glossary-error">
+                        <p>❌ Не удалось загрузить термины</p>
+                        <small>${error.message}</small>
+                        <button class="btn btn-sm btn-primary" onclick="loadGlossary()" style="margin-top:10px">
+                            🔄 Повторить
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // === 🔥 ОТРИСОВКА ТЕРМИНОВ ===
+        function renderGlossary(terms) {
+            const grid = document.getElementById('glossaryGrid');
+            
+            if (!terms || terms.length === 0) {
+                grid.innerHTML = '<div class="glossary-empty">📭 Термины пока не добавлены</div>';
+                return;
+            }
+            
+            grid.innerHTML = terms.map(term => {
+                // 🔥 Подготовка данных для поиска
+                const searchTerms = [
+                    term.term?.toLowerCase() || '',
+                    term.definition?.toLowerCase() || '',
+                    term.category?.toLowerCase() || ''
+                ].join(' ');
+                
+                return `
+                    <div class="glossary-item" data-search="${searchTerms}">
+                        <h3 class="glossary-term">${escapeHtml(term.term || 'Без названия')}</h3>
+                        <p class="glossary-definition">${escapeHtml(term.definition || 'Описание отсутствует')}</p>
+                        ${term.category ? `<small style="color:#666;display:block;margin-top:10px">📁 ${escapeHtml(term.category)}</small>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // === 🔥 ЭКРАНИРОВАНИЕ HTML (защита от XSS) ===
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // === 🔍 ФИЛЬТРАЦИЯ ПО ПОИСКУ ===
+        function filterGlossary() {
+            const searchInput = document.getElementById('glossarySearch');
+            const filter = searchInput.value.toLowerCase().trim();
+            const items = document.querySelectorAll('.glossary-item');
+            
+            let visibleCount = 0;
+            
+            items.forEach(item => {
+                const searchData = item.getAttribute('data-search') || '';
+                if (searchData.includes(filter)) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // 🔥 Сообщение если ничего не найдено
+            const grid = document.getElementById('glossaryGrid');
+            const emptyMsg = document.getElementById('glossaryEmptyMsg');
+            
+            if (filter && visibleCount === 0) {
+                if (!emptyMsg) {
+                    const msg = document.createElement('div');
+                    msg.id = 'glossaryEmptyMsg';
+                    msg.className = 'glossary-empty';
+                    msg.textContent = '🔍 Ничего не найдено по запросу "' + searchInput.value + '"';
+                    grid.appendChild(msg);
+                }
+            } else if (emptyMsg) {
+                emptyMsg.remove();
+            }
+        }
+
+        // === 🔥 ФУНКЦИЯ: Путь из БД → Полный URL для аватара ===
+        function buildAvatarUrl(pathFromDb) {
+            if (!pathFromDb) return null;
+            if (pathFromDb.startsWith('http://') || pathFromDb.startsWith('https://')) {
+                return pathFromDb;
+            }
+            return `${API_BASE}${pathFromDb}`;
+        }
+
+        // === 🔥 ФУНКЦИЯ: Отрисовка пользователя в шапке с аватаром с сервера ===
+        function renderUserSection(containerId, profile = null) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            if (!isAuthenticated()) {
+                container.innerHTML = `
+                    <div class="auth-buttons-mini">
+                        <a href="register.html">Зарегистрироваться</a>
+                        <a href="login.html">Войти</a>
+                    </div>
+                `;
+                return;
+            }
+
+            const username = getCurrentUsername();
+            const displayName = profile?.nickname || profile?.user_name || username;
+            const roleId = profile?.role || 1;
+            const roleConfig = ROLES_CONFIG[roleId] || ROLES_CONFIG[1];
+            
+            // 🔥 Получаем путь аватара из БД
+            const rawAvatarUrl = profile?.avatar_url || profile?.user_img;
+            
+            // 🔥 Строим полный URL с timestamp (отключает кэш!)
+            const avatarUrl = buildAvatarUrl(rawAvatarUrl);
+            
+            console.log('🖼️ Avatar URL:', avatarUrl);
+            
+            // HTML аватара с обработкой ошибки
+            const avatarHtml = avatarUrl
+                ? `<img src="${avatarUrl}" alt="${displayName}" 
+                       style="width:100%;height:100%;object-fit:cover"
+                       onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                   <div class="user-avatar-placeholder" style="display:none;background:${roleConfig.color}">
+                       ${displayName.charAt(0).toUpperCase()}
+                   </div>`
+                : `<div class="user-avatar-placeholder" style="background:${roleConfig.color}">
+                       ${displayName.charAt(0).toUpperCase()}
+                   </div>`;
+
+            container.innerHTML = `
+                <div class="user-avatar" onclick="location.href='profile.html'" title="Профиль">
+                    ${avatarHtml}
+                </div>
+                <a href="profile.html" class="user-name" style="color:${roleConfig.color}">${displayName}</a>
+                <span class="role-badge" style="background:${roleConfig.color}33;border-color:${roleConfig.color};color:${roleConfig.color}">
+                    ${roleConfig.name}
+                </span>
+                <a href="#" onclick="logout(event)" style="color:#fff;margin-left:8px;font-size:13px">Выйти</a>
+            `;
+        }
+
+        // === ОБНОВЛЕНИЕ ВИДИМОСТИ "ПАНЕЛЬ" ===
+        function updatePanelLink(profile = null) {
+            const panelLink = document.getElementById('panelLink');
+            if (!panelLink) return;
+            const roleId = profile?.role || 1;
+            const hasAccess = isAuthenticated() && typeof roleId === 'number' && roleId >= 2;
+            panelLink.classList.toggle('hidden', !hasAccess);
+        }
+
+        // === ИНИЦИАЛИЗАЦИЯ СТРАНИЦЫ ===
+        async function initPage() {
+            // 1. Рендер пользователя
+            renderUserSection('userSection');
+            updatePanelLink(null);
+            
+            // 2. Загрузка профиля и обновление интерфейса
+            if (isAuthenticated()) {
+                try {
+                    const username = getCurrentUsername();
+                    if (username) {
+                        const profile = await fetchProfile(username);
+                        if (profile) {
+                            renderUserSection('userSection', profile);
+                            updatePanelLink(profile);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Ошибка загрузки профиля:', e);
+                }
+            }
+            
+            // 3. 🔥 Загрузка глоссария из БД
+            await loadGlossary();
+        }
+
+        // Запуск после загрузки DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPage);
+        } else {
+            initPage();
+        }
+
+        // 🔥 Обновление глоссария при возврате на вкладку (синхронизация)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                // 🔥 Перезагружаем глоссарий если страница активна
+                loadGlossary();
+            }
+        });
+
+        // Закрытие меню при клике вне
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('sideMenu');
+            const btn = document.getElementById('menuBtn');
+            if (menu && menu.classList.contains('active') && 
+                !menu.contains(e.target) && !btn.contains(e.target)) {
+                menu.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
